@@ -8,17 +8,25 @@ def main():
         print("❌ Error: Cannot access webcam.")
         return
 
-    # Load known faces
+    # Load known faces once
     register_known_faces("known_faces")
+
+    # Track frames for skipping
+    frame_count = 0
+    faces = []
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        # Detect and recognize faces
-        faces = detect_and_recognize(frame)
+        frame_count += 1
 
+        # Only detect and recognize every 3rd frame
+        if frame_count % 3 == 0:
+            faces = detect_and_recognize(frame, scale_factor=0.3)
+
+        # Draw face results from last detection
         for face in faces:
             x1, y1, x2, y2 = face["bbox"]
             label = face["name"]
@@ -37,3 +45,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

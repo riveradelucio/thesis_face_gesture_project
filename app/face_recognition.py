@@ -38,7 +38,7 @@ def get_embedding(image):
     return None
 
 # Detect and recognize faces from a frame
-def detect_and_recognize(frame, scale_factor=0.2):
+def detect_and_recognize(frame, scale_factor=0.1):
     recognized_faces = []
 
     small_frame = cv2.resize(frame, (0, 0), fx=scale_factor, fy=scale_factor)
