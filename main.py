@@ -38,7 +38,7 @@ def main():
         for face in faces:
             x1, y1, x2, y2 = face["bbox"]
             label = face["name"]
-            color = (0, 255, 0) if face["recognized"] else (0, 0, 255)
+            color = (0, 180, 0) if face["recognized"] else (0, 0, 255)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(frame, label, (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
@@ -55,13 +55,13 @@ def main():
 
         # Show "Hi detected!" for 2 seconds after wave
         if interaction_start_time and current_time - interaction_start_time < show_wave_message_duration:
-            cv2.putText(frame, "Hi detected!", (20, 60),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 3)
+            cv2.putText(frame, "Hi detected!", (20, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 100, 0), 3)
 
         # Step 4: Detect gestures only after interaction started
         if interaction_started:
-            cv2.putText(frame, "Interaction Running...", (20, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+            cv2.putText(frame, "Interaction Running...", (20, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (180, 180, 180), 2)
 
             gesture = detect_custom_gesture(frame)
 
@@ -73,7 +73,7 @@ def main():
             # Show last detected gesture for a few seconds
             if last_gesture and current_time - gesture_last_time < gesture_display_duration:
                 cv2.putText(frame, f"Gesture: {last_gesture}", (20, 150),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 200, 255), 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 165, 255), 2)
 
         # Final display
         cv2.imshow("Face + Gesture Recognition", frame)
