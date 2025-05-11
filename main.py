@@ -16,6 +16,9 @@ def main():
     frame_count = 0
     faces = []
     interaction_started = False
+    interaction_start_time = None  # 👈 to track when wave started
+    show_wave_message_duration = 2  # seconds
+
     last_gesture = None
     gesture_last_time = 0
     gesture_display_duration = 2  # seconds
@@ -42,34 +45,37 @@ def main():
 
         # Step 3: Trigger wave to start interaction
         recognized = any(face["recognized"] for face in faces)
+        current_time = time.time()
 
         if recognized and not interaction_started:
             if detect_wave(frame):
-                print("👋 Wave Detected! Interaction Started.")
+                print("Wave Detected! Interaction Started.")
                 interaction_started = True
-                cv2.putText(frame, "👋 Hi detected!", (20, 60),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 3)
+                interaction_start_time = current_time  # 👈 start timer
+
+        # Show "Hi detected!" for 2 seconds after wave
+        if interaction_start_time and current_time - interaction_start_time < show_wave_message_duration:
+            cv2.putText(frame, "Hi detected!", (20, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 3)
 
         # Step 4: Detect gestures only after interaction started
         if interaction_started:
-            cv2.putText(frame, "🎬 Interaction Running...", (20, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 0), 2)
+            cv2.putText(frame, "Interaction Running...", (20, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
 
             gesture = detect_custom_gesture(frame)
 
-            current_time = time.time()
-
             if gesture and (gesture != last_gesture or current_time - gesture_last_time > gesture_display_duration):
-                print(f"✋ Detected gesture: {gesture}")
+                print(f"Detected gesture: {gesture}")
                 last_gesture = gesture
                 gesture_last_time = current_time
 
-            # Display the last detected gesture for a short time
+            # Show last detected gesture for a few seconds
             if last_gesture and current_time - gesture_last_time < gesture_display_duration:
                 cv2.putText(frame, f"Gesture: {last_gesture}", (20, 150),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 200, 255), 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 200, 255), 2)
 
-        # Show the final frame
+        # Final display
         cv2.imshow("Face + Gesture Recognition", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
