@@ -54,10 +54,15 @@ def detect_custom_gesture(frame):
     return None
 
 def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
-    fingers = [1 if lm_list[4][2] < lm_list[3][2] else 0]
+    # Check finger states
+    fingers = [1 if lm_list[4][2] < lm_list[3][2] else 0]  # Thumb up
     for tip_id in finger_tips[1:]:
         fingers.append(1 if lm_list[tip_id][2] < lm_list[tip_id - 2][2] else 0)
     total_fingers = sum(fingers)
+
+    # Thumbs up: thumb up, all other fingers down
+    if fingers[0] == 1 and all(f == 0 for f in fingers[1:]):
+        return "Thumbs_Up"
 
     if total_fingers == 0:
         return "Fist"
@@ -69,6 +74,7 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
     index_finger = next((x for x in lm_list if x[0] == 8), None)
     middle_tip = next((x for x in lm_list if x[0] == 12), None)
 
+    # Eat gesture
     if mouth_pos and index_finger and middle_tip:
         fingers_distance = math.hypot(index_finger[1] - middle_tip[1], index_finger[2] - middle_tip[2])
         avg_x = (index_finger[1] + middle_tip[1]) / 2
@@ -78,11 +84,13 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
         if fingers_distance < 40 and avg_y > mouth_pos[1] and dist_to_mouth < 100:
             return "Eat"
 
+    # Shhh gesture
     if index_finger and mouth_pos:
         dist_to_mouth = math.hypot(index_finger[1] - mouth_pos[0], index_finger[2] - mouth_pos[1])
         if dist_to_mouth < 40:
             return "Silence"
 
+    # Can't hear
     if index_finger:
         for ex, ey in left_ear + right_ear:
             dist = math.hypot(index_finger[1] - ex, index_finger[2] - ey)
@@ -103,5 +111,4 @@ def _detect_two_hands(hand1, hand2):
         if thumb_dist < 60 and pinky_dist < 60:
             return "Heart"
 
-    # fallback
     return "Medicine"
