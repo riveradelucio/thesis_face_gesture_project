@@ -20,6 +20,7 @@ def main():
     interaction_started = False
     interaction_start_time = None
     show_wave_message_duration = 2  # seconds
+    gesture_start_delay = 2         # ⏱️ wait 2 seconds after wave before detecting gestures
 
     last_gesture = None
     gesture_last_time = 0
@@ -51,28 +52,28 @@ def main():
 
         if recognized and not interaction_started:
             if detect_wave(frame):
-                print("👋 Wave Detected! Interaction Started.")
+                print("Wave Detected! Interaction Started.")
                 interaction_started = True
                 interaction_start_time = current_time
 
-        # Step 4: Show "Hi" message
+        # Step 4: Show "Hi detected" message
         if interaction_start_time and current_time - interaction_start_time < show_wave_message_duration:
-            cv2.putText(frame, "👋 Hi detected!", (20, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (200, 100, 0), 3)
+            cv2.putText(frame, "Hi detected!", (20, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 100, 0), 3)
 
-        # Step 5: Detect gestures
-        if interaction_started:
-            cv2.putText(frame, "🎬 Interaction Running...", (20, 60),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (180, 180, 180), 2)
+        # Step 5: Gesture Recognition with delay
+        if interaction_started and current_time - interaction_start_time >= gesture_start_delay:
+            cv2.putText(frame, "Interaction Running...", (20, 460),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
 
             gesture = detect_custom_gesture(frame)
 
             if gesture and (gesture != last_gesture or current_time - gesture_last_time > gesture_display_duration):
-                print(f"✋ Detected gesture: {gesture}")
+                print(f"Detected gesture: {gesture}")
                 last_gesture = gesture
                 gesture_last_time = current_time
 
-            # Step 6: Show image overlay
+            # Step 6: Show gesture icon
             if last_gesture and current_time - gesture_last_time < gesture_display_duration:
                 frame = overlay_gesture_animation(
                     frame,
