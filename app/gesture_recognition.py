@@ -35,7 +35,6 @@ def detect_custom_gesture(frame):
     left_ear_positions = []
     right_ear_positions = []
 
-    # Detect face landmarks
     if result_face.multi_face_landmarks:
         for faceLms in result_face.multi_face_landmarks:
             h, w, _ = frame.shape
@@ -55,10 +54,8 @@ def detect_custom_gesture(frame):
     if result_hands.multi_hand_landmarks and result_hands.multi_handedness:
         for idx, (handLms, handInfo) in enumerate(zip(result_hands.multi_hand_landmarks, result_hands.multi_handedness)):
             if idx > 1:
-                continue  # Only support two hands
-
-            handedness = handInfo.classification[0].label  # 'Left' or 'Right'
-
+                continue
+            handedness = handInfo.classification[0].label
             lm_list = []
             h, w, _ = frame.shape
             for id, lm in enumerate(handLms.landmark):
@@ -66,15 +63,13 @@ def detect_custom_gesture(frame):
                 lm_list.append((id, cx, cy))
             all_hands.append(lm_list)
 
-            # Stop detection: track if hand is still
             wrist = next((x for x in lm_list if x[0] == 0), None)
             middle_tip = next((x for x in lm_list if x[0] == 12), None)
             hand_center = middle_tip if middle_tip else wrist
 
             if hand_center:
-                hand_position_buffers[idx].append((hand_center[1], hand_center[2]))  # (x, y)
+                hand_position_buffers[idx].append((hand_center[1], hand_center[2]))
 
-            # Calculate movement
             moving = False
             if len(hand_position_buffers[idx]) == hand_position_buffers[idx].maxlen:
                 xs = [x for x, y in hand_position_buffers[idx]]
@@ -84,13 +79,11 @@ def detect_custom_gesture(frame):
                 if dx > STOP_MOVEMENT_THRESHOLD or dy > STOP_MOVEMENT_THRESHOLD:
                     moving = True
 
-            # Check for Stop: all 5 fingers up and not moving
             fingers = []
             if handedness == 'Right':
                 fingers.append(1 if lm_list[4][1] < lm_list[3][1] else 0)
             else:
                 fingers.append(1 if lm_list[4][1] > lm_list[3][1] else 0)
-
             for tip_id in finger_tips[1:]:
                 fingers.append(1 if lm_list[tip_id][2] < lm_list[tip_id - 2][2] else 0)
 
@@ -104,11 +97,8 @@ def detect_custom_gesture(frame):
             else:
                 stop_still_counters[idx] = 0
 
-    # One-hand gesture check
     if len(all_hands) == 1:
         return _detect_one_hand(all_hands[0], mouth_pos, left_ear_positions, right_ear_positions)
-
-    # Two-hand gesture check
     if len(all_hands) == 2:
         return _detect_two_hands(all_hands[0], all_hands[1], left_eye_positions, right_eye_positions)
 
@@ -122,7 +112,6 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
 
     if lm_list[4][2] < lm_list[3][2] and all(lm_list[tip_id][2] > lm_list[tip_id - 2][2] for tip_id in finger_tips[1:]):
         return "Thumbs_Up"
-
     if lm_list[4][2] > lm_list[3][2] and all(lm_list[tip_id][2] > lm_list[tip_id - 2][2] for tip_id in finger_tips[1:]):
         return "Thumbs_Down"
 
@@ -176,20 +165,5 @@ def _detect_two_hands(hand1, hand2, left_eye_pos, right_eye_pos):
         pinky_dist = math.hypot(pinky1[1] - pinky2[1], pinky1[2] - pinky2[2])
         if thumb_dist < 60 and pinky_dist < 60:
             return "Heart"
-
-    finger_ids = [8, 12, 16]
-    fingers1 = [x for x in hand1 if x[0] in finger_ids]
-    fingers2 = [x for x in hand2 if x[0] in finger_ids]
-    close = 0
-    for f1 in fingers1:
-        for f2 in fingers2:
-            if math.hypot(f1[1] - f2[1], f1[2] - f2[2]) < 50:
-                close += 1
-    wrist1 = next((x for x in hand1 if x[0] == 0), None)
-    wrist2 = next((x for x in hand2 if x[0] == 0), None)
-    if wrist1 and wrist2:
-        wrist_dist = math.hypot(wrist1[1] - wrist2[1], wrist1[2] - wrist2[2])
-        if wrist_dist < 80 and close >= 3:
-            return "Clap"
 
     return None
