@@ -18,7 +18,6 @@ RIGHT_EAR_POINTS = [454, 323]
 
 def detect_custom_gesture(frame):
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
     result_hands = hands.process(rgb)
     result_face = face.process(rgb)
 
@@ -35,7 +34,6 @@ def detect_custom_gesture(frame):
             h, w, _ = frame.shape
             for i, lm in enumerate(faceLms.landmark):
                 cx, cy = int(lm.x * w), int(lm.y * h)
-
                 if i == MOUTH_TOP:
                     mouth_pos = (cx, cy)
                 if i in LEFT_EYE_POINTS:
@@ -65,13 +63,19 @@ def detect_custom_gesture(frame):
     return None
 
 def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
-    fingers = [1 if lm_list[4][2] < lm_list[3][2] else 0]  # Thumb
+    # Detect fingers
+    fingers = [1 if lm_list[4][2] < lm_list[3][2] else 0]  # Thumb up
     for tip_id in finger_tips[1:]:
         fingers.append(1 if lm_list[tip_id][2] < lm_list[tip_id - 2][2] else 0)
     total_fingers = sum(fingers)
 
-    if fingers[0] == 1 and all(f == 0 for f in fingers[1:]):
+    # 👍 Thumbs Up: thumb up, others folded
+    if lm_list[4][2] < lm_list[3][2] and all(lm_list[tip_id][2] > lm_list[tip_id - 2][2] for tip_id in finger_tips[1:]):
         return "Thumbs_Up"
+
+    # 👎 Thumbs Down: thumb down, others folded
+    if lm_list[4][2] > lm_list[3][2] and all(lm_list[tip_id][2] > lm_list[tip_id - 2][2] for tip_id in finger_tips[1:]):
+        return "Thumbs_Down"
 
     if total_fingers == 0:
         return "Fist"
@@ -83,7 +87,7 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
     index_finger = next((x for x in lm_list if x[0] == 8), None)
     middle_tip = next((x for x in lm_list if x[0] == 12), None)
 
-    # Eat gesture
+    # 🍽 Eat
     if mouth_pos and index_finger and middle_tip:
         fingers_distance = math.hypot(index_finger[1] - middle_tip[1], index_finger[2] - middle_tip[2])
         avg_x = (index_finger[1] + middle_tip[1]) / 2
@@ -92,13 +96,13 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
         if fingers_distance < 40 and avg_y > mouth_pos[1] and dist_to_mouth < 100:
             return "Eat"
 
-    # Shhh gesture
+    # 🤫 Silence
     if index_finger and mouth_pos:
         dist_to_mouth = math.hypot(index_finger[1] - mouth_pos[0], index_finger[2] - mouth_pos[1])
         if dist_to_mouth < 40:
             return "Silence"
 
-    # Can't hear
+    # 🧏 Can't hear
     if index_finger:
         for ex, ey in left_ear + right_ear:
             dist = math.hypot(index_finger[1] - ex, index_finger[2] - ey)
@@ -108,32 +112,43 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
     return None
 
 def _detect_two_hands(hand1, hand2, left_eye_pos, right_eye_pos):
-    # Get relevant finger tips
-    tips1 = [x for x in hand1 if x[0] in [8, 12, 16]]  # index, middle, ring
+    # 🙈 Cover Eyes
+    tips1 = [x for x in hand1 if x[0] in [8, 12, 16]]
     tips2 = [x for x in hand2 if x[0] in [8, 12, 16]]
-
-    # Cover Eyes gesture: check if any finger from each hand is close to left/right eyes
     if left_eye_pos and right_eye_pos:
         for tip1 in tips1:
             for (ex, ey) in left_eye_pos:
-                dist1 = math.hypot(tip1[1] - ex, tip1[2] - ey)
-                if dist1 < 60:
+                if math.hypot(tip1[1] - ex, tip1[2] - ey) < 60:
                     for tip2 in tips2:
                         for (ex2, ey2) in right_eye_pos:
-                            dist2 = math.hypot(tip2[1] - ex2, tip2[2] - ey2)
-                            if dist2 < 60:
+                            if math.hypot(tip2[1] - ex2, tip2[2] - ey2) < 60:
                                 return "Cover_eyes"
 
-    # Heart gesture
+    # ❤️ Heart
     thumb1 = next((x for x in hand1 if x[0] == 4), None)
     thumb2 = next((x for x in hand2 if x[0] == 4), None)
     pinky1 = next((x for x in hand1 if x[0] == 20), None)
     pinky2 = next((x for x in hand2 if x[0] == 20), None)
-
     if thumb1 and thumb2 and pinky1 and pinky2:
         thumb_dist = math.hypot(thumb1[1] - thumb2[1], thumb1[2] - thumb2[2])
         pinky_dist = math.hypot(pinky1[1] - pinky2[1], pinky1[2] - pinky2[2])
         if thumb_dist < 60 and pinky_dist < 60:
             return "Heart"
+
+    # 👏 Clap
+    finger_ids = [8, 12, 16]
+    fingers1 = [x for x in hand1 if x[0] in finger_ids]
+    fingers2 = [x for x in hand2 if x[0] in finger_ids]
+    close = 0
+    for f1 in fingers1:
+        for f2 in fingers2:
+            if math.hypot(f1[1] - f2[1], f1[2] - f2[2]) < 50:
+                close += 1
+    wrist1 = next((x for x in hand1 if x[0] == 0), None)
+    wrist2 = next((x for x in hand2 if x[0] == 0), None)
+    if wrist1 and wrist2:
+        wrist_dist = math.hypot(wrist1[1] - wrist2[1], wrist1[2] - wrist2[2])
+        if wrist_dist < 80 and close >= 3:
+            return "Clap"
 
     return None
