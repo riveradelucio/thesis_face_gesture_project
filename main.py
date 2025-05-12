@@ -81,7 +81,7 @@ def main():
                     duration=gesture_display_duration,
                     x=20,
                     y=300,
-                    scale=0.3
+                    scale=0.2
                 )
 
         # Final camera feed

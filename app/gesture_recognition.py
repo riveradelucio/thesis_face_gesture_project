@@ -81,13 +81,13 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
     if index_finger and mouth_pos:
         dist_to_mouth = math.hypot(index_finger[1] - mouth_pos[0], index_finger[2] - mouth_pos[1])
         if dist_to_mouth < 40:
-            return "Shhh"
+            return "Silence"
 
     if index_finger:
         for ex, ey in left_ear + right_ear:
             dist = math.hypot(index_finger[1] - ex, index_finger[2] - ey)
             if dist < 40:
-                return "Can't hear"
+                return "Cant_hear"
 
     return None
 
