@@ -41,3 +41,14 @@ def user_visited_today(name):
         except Exception:
             continue
     return False
+
+def get_last_visit(name):
+    name = name.lower()
+    log_data = load_visit_log()
+    if name in log_data and log_data[name]:
+        try:
+            last_time = datetime.fromisoformat(log_data[name][-1])
+            return last_time
+        except Exception:
+            pass
+    return None

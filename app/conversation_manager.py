@@ -1,7 +1,10 @@
 from app.role_identifier import get_user_role
+from app.role_database import USER_ROLES
 from app.text_to_speech import speak_text
-from app.visit_logger import log_user_visit, user_visited_today
+from app.visit_logger import log_user_visit, user_visited_today, get_last_visit
+
 import threading
+from datetime import datetime
 
 def speak_in_background(message: str):
     thread = threading.Thread(target=speak_text, args=(message,))
@@ -11,18 +14,34 @@ def greet_user_by_role(name: str):
     role = get_user_role(name)
     name_clean = name.capitalize()
 
-    first_visit = not user_visited_today(name)  # ✅ Check if user already visited today
-    log_user_visit(name)                        # ✅ Log the current visit
+    first_visit = not user_visited_today(name)
+    log_user_visit(name)
 
-    if first_visit:
-        greeting = f"Hello {name_clean}, you are recognized as a {role}."
-        if role == "Elderly user":
+    greeting = f"Hello {name_clean}, you are recognized as a {role}."
+
+    # 👨‍👩‍👧 Mention elderly user's last visit if this is a family member or caregiver
+    if role in ["Family member", "Caregiver"]:
+        elderly_users = [user for user, r in USER_ROLES.items() if r == "Elderly user"]
+        if elderly_users:
+            elderly_name = elderly_users[0].capitalize()
+            last_seen_time = get_last_visit(elderly_users[0])
+            if last_seen_time:
+                hour = last_seen_time.hour
+                if 5 <= hour < 12:
+                    period = "morning"
+                elif 12 <= hour < 18:
+                    period = "afternoon"
+                else:
+                    period = "evening"
+
+                time_str = last_seen_time.strftime("%I:%M %p").lstrip("0")  # e.g., "3:54 PM"
+                greeting += f" Last time I saw {elderly_name} was in the {period} at {time_str.lower()}."
+
+    # 🧓 Elderly-specific phrasing
+    if role == "Elderly user":
+        if first_visit:
             greeting += " It's nice to see you today. I hope you're feeling well."
-        elif role == "Family member":
-            greeting += " Welcome! Thanks for coming today."
-        elif role == "Caregiver":
-            greeting += " Thank you for your work. Let me know if you need assistance."
-    else:
-        greeting = f"Welcome back {name_clean}, our {role.lower()}."
+        else:
+            greeting = f"Welcome back {name_clean}, it's good to see you again."
 
     speak_in_background(greeting)
