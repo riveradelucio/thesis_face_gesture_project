@@ -20,7 +20,7 @@ def register_known_faces(folder_path="known_faces"):
 
     for filename in os.listdir(folder_path):
         if filename.lower().endswith((".jpg", ".png")):
-            name = os.path.splitext(filename)[0]
+            name = os.path.splitext(filename)[0].lower()
             img = cv2.imread(os.path.join(folder_path, filename))
             if img is None:
                 print(f"⚠️ Could not read {filename}")

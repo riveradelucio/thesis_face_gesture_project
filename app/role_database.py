@@ -3,5 +3,6 @@
 USER_ROLES = {
     "lucia": "Elderly user",
     "daniel": "Family member",
-    "nurse_ana": "Caregiver"
+    "nurse_ana": "Caregiver",
+    "Face_ro": "Elderly user" 
 }
