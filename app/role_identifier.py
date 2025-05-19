@@ -1,4 +1,4 @@
-# role_identifier.pyfrom app.role_database import USER_ROLES
+from app.role_database import USER_ROLES
 
 def get_user_role(name: str) -> str:
     """
