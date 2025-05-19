@@ -34,7 +34,7 @@ def greet_user_by_role(name: str):
                 else:
                     period = "evening"
 
-                time_str = last_seen_time.strftime("%I:%M %p").lstrip("0")  # e.g., "3:54 PM"
+                time_str = last_seen_time.strftime("%I:%M %p").lstrip("0")
                 greeting += f" Last time I saw {elderly_name} was in the {period} at {time_str.lower()}."
 
     # 🧓 Elderly-specific phrasing
@@ -44,4 +44,8 @@ def greet_user_by_role(name: str):
         else:
             greeting = f"Welcome back {name_clean}, it's good to see you again."
 
-    speak_in_background(greeting)
+    # 🖐️ Add natural transition to gesture mode
+    gesture_prompt = "Let me know how I can help, just show me a hand gesture."
+    full_message = f"{greeting} {gesture_prompt}"
+
+    speak_in_background(full_message)
