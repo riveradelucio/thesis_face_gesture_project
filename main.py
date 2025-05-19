@@ -123,8 +123,8 @@ def main():
 
         # Step 7: Show typing prompt during registration
         if show_typing_prompt:
-            cv2.putText(frame, "Please type your name and role on the keyboard...",
-                        (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+            cv2.putText(frame, "Please type your name and role on the keyboard...", (20, 460),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
 
         # Step 8: Show camera
         cv2.imshow("Face + Gesture Recognition", frame)
