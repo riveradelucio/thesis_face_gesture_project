@@ -2,7 +2,10 @@ import os
 import json
 from datetime import datetime
 
-LOG_FILE = "user_visits.json"
+LOG_FOLDER = "data"
+LOG_FILE = os.path.join(LOG_FOLDER, "user_visits.json")
+
+os.makedirs(LOG_FOLDER, exist_ok=True)
 
 def load_visit_log():
     if os.path.exists(LOG_FILE):
