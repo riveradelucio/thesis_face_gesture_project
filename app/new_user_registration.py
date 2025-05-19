@@ -11,17 +11,30 @@ def speak_in_background(message: str):
     thread = threading.Thread(target=speak_text, args=(message,))
     thread.start()
 
-def save_new_face_image(full_frame, name):
+def save_new_face_image(_, name):
     speak_in_background("Could you stay still for a moment? I will take a picture of you.")
-    
+
     print("Stage 3: Waiting before taking picture...")
-    time.sleep(3)  # ✅ Pause for 3 seconds
+    time.sleep(5)  # Wait for the user to stay still
 
-    print("Stage 3: Preparing to save image...")
+    print("Stage 3: Capturing new frame...")
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("❌ Error: Cannot access webcam to take picture.")
+        return
+
+    ret, fresh_frame = cap.read()
+    cap.release()
+
+    if not ret:
+        print("❌ Failed to capture image.")
+        return
+
+    fresh_frame = cv2.flip(fresh_frame, 1)  # Flip to match live view
     filename = os.path.join("known_faces", f"{name.lower()}.jpg")
-    cv2.imwrite(filename, full_frame)
+    cv2.imwrite(filename, fresh_frame)
 
-    print(f"Stage 3: Image saved as {filename}")
+    print(f"✅ Image saved as {filename}")
 
 
 def handle_new_user_registration(frame):
