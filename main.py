@@ -80,8 +80,8 @@ def main():
                     last_gesture,
                     gesture_last_time,
                     duration=gesture_display_duration,
-                    x=20,
-                    y=300,
+                    x=600,
+                    y=600,
                     scale=0.2
                 )
 

@@ -19,7 +19,7 @@ def load_gesture_animation(gesture_name):
     gesture_animations[gesture_name] = frames
     return frames
 
-def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, x=None, y=None, scale=0.5):
+def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, x=None, y=None, scale=0.4):
     frames = load_gesture_animation(gesture_name)
     if not frames:
         return base_frame
@@ -32,20 +32,17 @@ def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, 
 
     frame = frames[frame_index]
     frame = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
-
     h, w, _ = frame.shape
 
-    # Default: Bottom-right corner
+    # Position for BOTTOM-LEFT of screen (appears RIGHT in mirrored view)
     if x is None:
-        x = base_frame.shape[1] - w - 20
+        x = 20
     if y is None:
         y = base_frame.shape[0] - h - 20
 
-    # Clip to frame boundaries once
-    if y + h > base_frame.shape[0] or x + w > base_frame.shape[1]:
-        print(f"[WARNING] Adjusting overlay position to stay on screen.")
-        y = max(0, base_frame.shape[0] - h - 10)
-        x = max(0, base_frame.shape[1] - w - 10)
+    # Clamp to keep inside frame boundaries
+    x = max(0, min(x, base_frame.shape[1] - w))
+    y = max(0, min(y, base_frame.shape[0] - h))
 
     try:
         base_frame[y:y+h, x:x+w] = frame
