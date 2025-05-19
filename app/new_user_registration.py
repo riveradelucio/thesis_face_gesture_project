@@ -11,28 +11,27 @@ def speak_in_background(message: str):
     thread.start()
 
 def save_new_face_image(full_frame, name):
-    print("👉 Stage 3: Preparing to save image...")
+    print("Stage 3: Preparing to save image...")
     filename = os.path.join("known_faces", f"{name.lower()}.jpg")
-
-    # 🧪 Comment this line to test if it causes freeze:
+    
     cv2.imwrite(filename, full_frame)
 
-    print(f"✅ Stage 3: Image saved as {filename}")
+    print(f"Stage 3: Image saved as {filename}")
 
 def handle_new_user_registration(frame):
-    print("🔄 Stage 1: Starting user registration")
+    print("Stage 1: Starting user registration")
 
-    speak_in_background("I can't recognize you. Could you stay still and type your name?")
+    speak_in_background("I can't recognize you. Could you stay still and type your name and role?")
 
-    print("⌨️ Stage 2: Waiting for user input...")
+    print("Stage 2: Waiting for user input...")
     name = input("Enter name for new user: ").strip().lower()
     role = input("Enter role (Elderly user / Family member / Caregiver): ").strip()
-    print(f"📝 Name: {name}, Role: {role}")
+    print(f"Name: {name}, Role: {role}")
 
     save_new_face_image(frame, name)
 
-    print("📂 Stage 4: Saving role and updating face database...")
+    print("Stage 4: Saving role and updating face database...")
     USER_ROLES[name] = role
     save_roles(USER_ROLES)
     register_known_faces("known_faces")
-    print(f"✅ Stage 5: {name} registered as {role}. System updated.")
+    print(f"Stage 5: {name} registered as {role}. System updated.")
