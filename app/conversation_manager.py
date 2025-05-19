@@ -16,3 +16,5 @@ def greet_user_by_role(name: str):
         greeting += " Thanks for taking care. Let me know if you need help."
 
     speak_text(greeting)
+
+#
