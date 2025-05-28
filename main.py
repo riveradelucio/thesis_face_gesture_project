@@ -56,16 +56,7 @@ def main():
         recognized = any(face["recognized"] for face in faces)
         has_unrecognized_face = any(not face["recognized"] for face in faces)
 
-        # Step 1: Draw face labels
-        for face in faces:
-            x1, y1, x2, y2 = face["bbox"]
-            label = face["name"]
-            color = (0, 180, 0) if face["recognized"] else (0, 0, 255)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(frame, label, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
-
-        # Step 2: Trigger registration if unrecognized + wave
+        # Step 1: Trigger registration if unrecognized + wave
         if has_unrecognized_face and not recognized and not registration_in_progress:
             if unrecognized_start_time is None:
                 unrecognized_start_time = current_time
@@ -75,7 +66,7 @@ def main():
             unrecognized_start_time = None
             awaiting_wave = False
 
-        # Step 3: Detect wave to confirm intent to register
+        # Step 2: Detect wave to confirm intent to register
         if awaiting_wave and detect_wave(frame):
             print("👋 Wave detected from unrecognized user. Starting registration.")
             show_typing_prompt = True
@@ -86,7 +77,7 @@ def main():
                 args=(frame.copy(),)
             ).start()
 
-        # Step 4: Detect wave from known user to start interaction
+        # Step 3: Detect wave from known user to start interaction
         if recognized and not interaction_started:
             if detect_wave(frame):
                 print("👋 Wave Detected! Starting interaction.")
@@ -97,16 +88,20 @@ def main():
                         greet_user_by_role(face["name"])
                         break
 
-        # Step 5: Show greeting text
-        if interaction_start_time and current_time - interaction_start_time < show_wave_message_duration:
-            cv2.putText(frame, "Hi detected!", (20, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 100, 0), 3)
+        # Step 4: Prepare black background for main display
+        black_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
 
-        # Step 6: Gesture recognition
+        # Step 5: Show messages like "Hi detected" or "Interaction Running"
+        if interaction_start_time:
+            if current_time - interaction_start_time < show_wave_message_duration:
+                cv2.putText(black_frame, "Hi detected!", (20, 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
+            elif current_time - interaction_start_time >= gesture_start_delay:
+                cv2.putText(black_frame, "Interaction Running...", (20, 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2)
+
+        # Step 6: Gesture recognition and overlay on black frame
         if interaction_started and current_time - interaction_start_time >= gesture_start_delay:
-            cv2.putText(frame, "Interaction Running...", (20, 460),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
-
             gesture = detect_custom_gesture(frame)
             if gesture and (gesture != last_gesture or current_time - gesture_last_time > gesture_display_duration):
                 print(f"🖐️ Detected gesture: {gesture}")
@@ -114,34 +109,30 @@ def main():
                 gesture_last_time = current_time
 
             if last_gesture and current_time - gesture_last_time < gesture_display_duration:
-                frame = overlay_gesture_animation(
-                    frame,
+                black_frame = overlay_gesture_animation(
+                    black_frame,
                     last_gesture,
                     gesture_last_time,
                     duration=gesture_display_duration,
-                    x=600,
-                    y=600,
-                    scale=0.2
+                    x=black_frame.shape[1] // 2 - 100,
+                    y=black_frame.shape[0] // 2 - 100,
+                    scale=1.0
                 )
 
         # Step 7: Show typing prompt during registration
         if show_typing_prompt:
-            cv2.putText(frame, "Please type your name and role on the keyboard...", (20, 460),
+            cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
 
-        # Step 8: Combine interaction screen with user view (PIP style)
-        interaction_frame = cv2.resize(frame, (int(frame.shape[1] * 0.8), frame.shape[0]))
+        # Step 8: Resize and place user view (bottom-right)
         user_view_small = cv2.resize(full_frame, (int(frame.shape[1] * 0.2), int(frame.shape[0] * 0.2)))
-
-        # Place user view at bottom-right
-        final_display = interaction_frame.copy()
+        final_display = black_frame.copy()
         y_offset = final_display.shape[0] - user_view_small.shape[0] - 10
         x_offset = final_display.shape[1] - user_view_small.shape[1] - 10
-
         final_display[y_offset:y_offset + user_view_small.shape[0],
                       x_offset:x_offset + user_view_small.shape[1]] = user_view_small
 
-        # Step 9: Show camera
+        # Step 9: Show final display
         cv2.imshow("Face + Gesture Recognition", final_display)
 
         # Step 10: Exit
