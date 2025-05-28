@@ -2,6 +2,7 @@ import cv2
 import time
 import os
 import threading
+import numpy as np
 
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.hi_wave_detector import detect_wave
@@ -11,7 +12,7 @@ from app.conversation_manager import greet_user_by_role
 from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
 
-# ✅ Global flags
+# Global flags
 show_typing_prompt = False
 registration_in_progress = False
 awaiting_wave = False
@@ -47,6 +48,8 @@ def main():
         frame_count += 1
         current_time = time.time()
 
+        full_frame = frame.copy()  # For user view (bottom-right)
+
         if frame_count % 3 == 0:
             faces = detect_and_recognize(frame, scale_factor=0.3)
 
@@ -66,7 +69,7 @@ def main():
         if has_unrecognized_face and not recognized and not registration_in_progress:
             if unrecognized_start_time is None:
                 unrecognized_start_time = current_time
-            elif current_time - unrecognized_start_time > recognition_timeout:                
+            elif current_time - unrecognized_start_time > recognition_timeout:
                 awaiting_wave = True
         else:
             unrecognized_start_time = None
@@ -126,17 +129,28 @@ def main():
             cv2.putText(frame, "Please type your name and role on the keyboard...", (20, 460),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
 
-        # Step 8: Show camera
-        cv2.imshow("Face + Gesture Recognition", frame)
+        # Step 8: Combine interaction screen with user view (PIP style)
+        interaction_frame = cv2.resize(frame, (int(frame.shape[1] * 0.8), frame.shape[0]))
+        user_view_small = cv2.resize(full_frame, (int(frame.shape[1] * 0.2), int(frame.shape[0] * 0.2)))
 
-        # Step 9: Exit
+        # Place user view at bottom-right
+        final_display = interaction_frame.copy()
+        y_offset = final_display.shape[0] - user_view_small.shape[0] - 10
+        x_offset = final_display.shape[1] - user_view_small.shape[1] - 10
+
+        final_display[y_offset:y_offset + user_view_small.shape[0],
+                      x_offset:x_offset + user_view_small.shape[1]] = user_view_small
+
+        # Step 9: Show camera
+        cv2.imshow("Face + Gesture Recognition", final_display)
+
+        # Step 10: Exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
-# Step 10: Registration callback
 def run_registration_flow(frame):
     global show_typing_prompt, registration_in_progress
     handle_new_user_registration(frame)
