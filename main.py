@@ -40,6 +40,13 @@ def main():
     gesture_last_time = 0
     gesture_display_duration = 2
 
+    # Set preferred window size (not full screen, just bigger)
+    window_width = 700
+    window_height = 500
+    window_name = "Face + Gesture Recognition"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(window_name, window_width, window_height)
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -116,7 +123,7 @@ def main():
                     duration=gesture_display_duration,
                     x=black_frame.shape[1] // 2 - 100,
                     y=black_frame.shape[0] // 2 - 100,
-                    scale=1.0
+                    scale=0.3  # Smaller to avoid text overlap
                 )
 
         # Step 7: Show typing prompt during registration
@@ -133,7 +140,7 @@ def main():
                       x_offset:x_offset + user_view_small.shape[1]] = user_view_small
 
         # Step 9: Show final display
-        cv2.imshow("Face + Gesture Recognition", final_display)
+        cv2.imshow(window_name, final_display)
 
         # Step 10: Exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
