@@ -132,7 +132,11 @@ def main():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
 
         # Step 8: Resize and place user view (bottom-right)
-        user_view_small = cv2.resize(full_frame, (int(frame.shape[1] * 0.2), int(frame.shape[0] * 0.2)))
+        user_view_small = cv2.resize(
+            full_frame,
+            (int(frame.shape[1] * 0.2), int(frame.shape[0] * 0.3)),
+            interpolation=cv2.INTER_AREA
+        )
         final_display = black_frame.copy()
         y_offset = final_display.shape[0] - user_view_small.shape[0] - 10
         x_offset = final_display.shape[1] - user_view_small.shape[1] - 10

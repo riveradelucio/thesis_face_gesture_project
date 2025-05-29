@@ -1,4 +1,5 @@
 import pyttsx3
+from app.subtitle_manager import update_subtitle  # ✅ New import
 
 # Initialize the text-to-speech engine once
 _engine = pyttsx3.init()
@@ -15,11 +16,10 @@ _engine.setProperty('volume', 1.0)  # Max volume
 
 def speak_text(text: str) -> None:
     """
-    Speak the given text out loud using the TTS engine.
-
-    Args:
-        text (str): The message to be spoken.
+    Speak the given text out loud using the TTS engine,
+    and show the text as a subtitle.
     """
+    update_subtitle(text)  # ✅ Show subtitle while speaking
     _engine.say(text)
     _engine.runAndWait()
 
