@@ -19,8 +19,13 @@ show_typing_prompt = False
 registration_in_progress = False
 awaiting_wave = False
 
+# Idle animation config (💤 Blinking avatar before interaction)
+idle_animation_name = "Idle_state"  # Folder name in reactions
+idle_start_time = time.time()
+
+
 def main():
-    global show_typing_prompt, registration_in_progress, awaiting_wave
+    global show_typing_prompt, registration_in_progress, awaiting_wave, idle_start_time
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -42,7 +47,6 @@ def main():
     gesture_last_time = 0
     gesture_display_duration = 2
 
-    # Set preferred window size (not full screen, just bigger)
     window_width = 700
     window_height = 500
     window_name = "Face + Gesture Recognition"
@@ -57,7 +61,7 @@ def main():
         frame_count += 1
         current_time = time.time()
 
-        full_frame = frame.copy()  # For user view (bottom-right)
+        full_frame = frame.copy()
 
         if frame_count % 3 == 0:
             faces = detect_and_recognize(frame, scale_factor=0.3)
@@ -97,10 +101,22 @@ def main():
                         greet_user_by_role(face["name"])
                         break
 
-        # Step 4: Prepare black background for main display
+        # Step 4: Create black canvas for center
         black_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
 
-        # Step 5: Show messages like "Hi detected" or "Interaction Running"
+        # Step 5: Show idle blinking animation if waiting
+        if not interaction_started and not registration_in_progress:
+            black_frame = overlay_gesture_animation(
+                black_frame,
+                gesture_name=idle_animation_name,
+                start_time=idle_start_time,
+                duration=2.5,
+                scale=0.3,
+                x=80,
+                y=black_frame.shape[0] // 2 - 100
+            )
+
+        # Step 6: Show interaction messages
         if interaction_start_time:
             if current_time - interaction_start_time < show_wave_message_duration:
                 cv2.putText(black_frame, "Hi detected!", (20, 50),
@@ -109,7 +125,7 @@ def main():
                 cv2.putText(black_frame, "Interaction Running...", (20, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2)
 
-        # Step 6: Gesture recognition and overlay on black frame
+        # Step 7: Gesture detection
         if interaction_started and current_time - interaction_start_time >= gesture_start_delay:
             gesture = detect_custom_gesture(frame)
             if gesture and (gesture != last_gesture or current_time - gesture_last_time > gesture_display_duration):
@@ -128,12 +144,12 @@ def main():
                     scale=0.3
                 )
 
-        # Step 7: Show typing prompt during registration
+        # Step 8: Typing prompt
         if show_typing_prompt:
             cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
 
-        # Step 8: Resize and place user view (bottom-right)
+        # Step 9: Show bottom-right user webcam view
         user_view_small = cv2.resize(
             full_frame,
             (int(frame.shape[1] * 0.2), int(frame.shape[0] * 0.3)),
@@ -145,10 +161,10 @@ def main():
         final_display[y_offset:y_offset + user_view_small.shape[0],
                       x_offset:x_offset + user_view_small.shape[1]] = user_view_small
 
-        # Step 9: Draw wrapped subtitle just above screen bottom
+        # Step 10: Subtitles
         subtitle_text = get_current_subtitle()
         if subtitle_text:
-            max_line_width = 45  # character limit before wrapping
+            max_line_width = 45
             wrapped_lines = textwrap.wrap(subtitle_text, width=max_line_width)
             line_height = 25
             subtitle_y = final_display.shape[0] - line_height * len(wrapped_lines) - 10
@@ -157,21 +173,21 @@ def main():
                             (20, subtitle_y + i * line_height),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
 
-        # Step 10: Show final display
+        # Step 11: Final show
         cv2.imshow(window_name, final_display)
-
-        # Step 11: Exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
+
 def run_registration_flow(frame):
     global show_typing_prompt, registration_in_progress
     handle_new_user_registration(frame)
     show_typing_prompt = False
     registration_in_progress = False
+
 
 if __name__ == "__main__":
     main()
