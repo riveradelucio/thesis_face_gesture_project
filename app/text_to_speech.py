@@ -7,7 +7,7 @@ _engine = pyttsx3.init()
 
 # Select the preferred voice (Microsoft Zira - US English Female)
 for voice in _engine.getProperty('voices'):
-    if "zira" in voice.id.lower():
+    if "david" in voice.id.lower():
         _engine.setProperty('voice', voice.id)
         break
 

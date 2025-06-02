@@ -3,7 +3,7 @@ import time
 # Global variables for tracking subtitle state
 current_subtitle = ""
 last_update_time = 0
-subtitle_display_duration = 5  # seconds
+subtitle_display_duration = 10  # seconds
 
 def update_subtitle(text):
     """
