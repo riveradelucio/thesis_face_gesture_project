@@ -1,5 +1,6 @@
 import pyttsx3
-from app.subtitle_manager import update_subtitle  # ✅ New import
+import time  # ✅ Added for subtitle timing
+from app.subtitle_manager import update_subtitle  # ✅ For showing subtitles
 
 # Initialize the text-to-speech engine once
 _engine = pyttsx3.init()
@@ -19,7 +20,8 @@ def speak_text(text: str) -> None:
     Speak the given text out loud using the TTS engine,
     and show the text as a subtitle.
     """
-    update_subtitle(text)  # ✅ Show subtitle while speaking
+    update_subtitle(text)   # ✅ Set subtitle first
+    time.sleep(0.1)         # ✅ Allow UI thread time to catch subtitle
     _engine.say(text)
     _engine.runAndWait()
 

@@ -3,6 +3,7 @@ import time
 import os
 import threading
 import numpy as np
+import textwrap
 
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.hi_wave_detector import detect_wave
@@ -144,12 +145,17 @@ def main():
         final_display[y_offset:y_offset + user_view_small.shape[0],
                       x_offset:x_offset + user_view_small.shape[1]] = user_view_small
 
-        # Step 9: Draw subtitle if available
+        # Step 9: Draw wrapped subtitle just above screen bottom
         subtitle_text = get_current_subtitle()
         if subtitle_text:
-            cv2.putText(final_display, subtitle_text,
-                        (20, final_display.shape[0] - 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            max_line_width = 45  # character limit before wrapping
+            wrapped_lines = textwrap.wrap(subtitle_text, width=max_line_width)
+            line_height = 25
+            subtitle_y = final_display.shape[0] - line_height * len(wrapped_lines) - 10
+            for i, line in enumerate(wrapped_lines):
+                cv2.putText(final_display, line,
+                            (20, subtitle_y + i * line_height),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
 
         # Step 10: Show final display
         cv2.imshow(window_name, final_display)
