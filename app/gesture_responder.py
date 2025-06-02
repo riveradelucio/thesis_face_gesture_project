@@ -4,7 +4,6 @@ import time
 from glob import glob
 import numpy as np
 
-
 gesture_animations = {}
 
 def load_gesture_animation(gesture_name):
@@ -23,7 +22,7 @@ def load_gesture_animation(gesture_name):
     gesture_animations[gesture_name] = frames
     return frames
 
-def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, x=None, y=None, scale=0.4):
+def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, x=None, y=None, scale=0.3):
     frames = load_gesture_animation(gesture_name)
     if not frames:
         return base_frame
@@ -33,7 +32,7 @@ def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, 
     frame_index = int((elapsed / duration) * total_frames) % total_frames
     frame = frames[frame_index]
 
-    if frame.shape[2] == 4:  # Transparent PNG
+    if frame.shape[2] == 4:
         alpha_channel = frame[:, :, 3] / 255.0
         rgb_frame = frame[:, :, :3]
     else:
@@ -44,10 +43,12 @@ def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, 
     h, w, _ = rgb_frame.shape
 
     base_h, base_w, _ = base_frame.shape
+
     if x is None:
-        x = base_w // 2 - w // 2
+        x = 80
     if y is None:
-        y = base_h // 2 - h // 2
+        y = base_h // 2 - 100
+
     x = max(0, min(x, base_w - w))
     y = max(0, min(y, base_h - h))
 
