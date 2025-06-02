@@ -11,6 +11,7 @@ from app.gesture_responder import overlay_gesture_animation
 from app.conversation_manager import greet_user_by_role
 from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
+from app.subtitle_manager import get_current_subtitle
 
 # Global flags
 show_typing_prompt = False
@@ -123,7 +124,7 @@ def main():
                     duration=gesture_display_duration,
                     x=black_frame.shape[1] // 2 - 100,
                     y=black_frame.shape[0] // 2 - 100,
-                    scale=0.3  # Smaller to avoid text overlap
+                    scale=0.3
                 )
 
         # Step 7: Show typing prompt during registration
@@ -143,10 +144,17 @@ def main():
         final_display[y_offset:y_offset + user_view_small.shape[0],
                       x_offset:x_offset + user_view_small.shape[1]] = user_view_small
 
-        # Step 9: Show final display
+        # Step 9: Draw subtitle if available
+        subtitle_text = get_current_subtitle()
+        if subtitle_text:
+            cv2.putText(final_display, subtitle_text,
+                        (20, final_display.shape[0] - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+        # Step 10: Show final display
         cv2.imshow(window_name, final_display)
 
-        # Step 10: Exit
+        # Step 11: Exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
