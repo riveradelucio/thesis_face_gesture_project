@@ -44,7 +44,7 @@ def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, 
 
     base_h, base_w, _ = base_frame.shape
 
-    # ⬇️ Hardcoded fixed avatar position from main.py
+    # ✅ Fixed avatar position (consistent with main.py)
     x = 80
     y = base_h // 2 - 100
 
@@ -65,3 +65,17 @@ def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, 
         print(f"[ERROR] Failed to overlay image: {e}")
 
     return base_frame
+
+def overlay_centered_animation(base_frame, gesture_name, start_time, duration=2.5, scale=0.3):
+    """
+    Always uses fixed position and delegates to overlay_gesture_animation.
+    Makes main.py simpler and consistent.
+    """
+    return overlay_gesture_animation(
+        base_frame,
+        gesture_name=gesture_name,
+        start_time=start_time,
+        duration=duration,
+        scale=scale
+        # x and y are ignored on purpose (they are hardcoded inside)
+    )

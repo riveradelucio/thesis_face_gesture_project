@@ -8,7 +8,7 @@ import textwrap
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.hi_wave_detector import detect_wave
 from app.gesture_recognition import detect_custom_gesture
-from app.gesture_responder import overlay_gesture_animation
+from app.gesture_responder import overlay_gesture_animation, overlay_centered_animation
 from app.conversation_manager import greet_user_by_role
 from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
@@ -98,46 +98,20 @@ def main():
         black_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
 
         if not interaction_started and not registration_in_progress and (not last_gesture or current_time - gesture_last_time >= gesture_display_duration):
-            black_frame = overlay_gesture_animation(
-                black_frame,
-                gesture_name=idle_animation_name,
-                start_time=idle_start_time,
-                duration=2.5,
-                scale=0.3,
-                x=80,
-                y=black_frame.shape[0] // 2 - 100
-            )
+            black_frame = overlay_centered_animation(black_frame, idle_animation_name, idle_start_time)
 
         if interaction_start_time:
             if current_time - interaction_start_time < show_wave_message_duration:
                 cv2.putText(black_frame, "Hi detected!", (20, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
 
-                black_frame = overlay_gesture_animation(
-                    black_frame,
-                    gesture_name="Speaking",
-                    start_time=interaction_start_time,
-                    duration=4.5,
-                    scale=0.3,
-                    x=80,
-                    y=black_frame.shape[0] // 2 - 100
-                )
+                black_frame = overlay_centered_animation(black_frame, "Speaking", interaction_start_time, duration=4.5)
 
             elif current_time - interaction_start_time >= gesture_start_delay:
-                # 🟡 Show idle animation only if no gesture is active
                 if not last_gesture or current_time - gesture_last_time >= gesture_display_duration:
-                    black_frame = overlay_gesture_animation(
-                        black_frame,
-                        gesture_name=idle_animation_name,
-                        start_time=idle_start_time,
-                        duration=2.5,
-                        scale=0.3,
-                        x=80,
-                        y=black_frame.shape[0] // 2 - 100
-                    )
+                    black_frame = overlay_centered_animation(black_frame, idle_animation_name, idle_start_time)
                 cv2.putText(black_frame, "Interaction Running...", (20, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2)
-                            
 
         if interaction_started and current_time - interaction_start_time >= gesture_start_delay:
             gesture = detect_custom_gesture(frame)
