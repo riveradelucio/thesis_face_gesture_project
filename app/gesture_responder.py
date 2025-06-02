@@ -22,7 +22,7 @@ def load_gesture_animation(gesture_name):
     gesture_animations[gesture_name] = frames
     return frames
 
-def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, x=None, y=None, scale=0.3):
+def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, scale=0.3, **kwargs):
     frames = load_gesture_animation(gesture_name)
     if not frames:
         return base_frame
@@ -44,10 +44,9 @@ def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, 
 
     base_h, base_w, _ = base_frame.shape
 
-    if x is None:
-        x = 80
-    if y is None:
-        y = base_h // 2 - 100
+    # ⬇️ Hardcoded fixed avatar position from main.py
+    x = 80
+    y = base_h // 2 - 100
 
     x = max(0, min(x, base_w - w))
     y = max(0, min(y, base_h - h))
