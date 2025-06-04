@@ -8,7 +8,7 @@ import textwrap
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.hi_wave_detector import detect_wave
 from app.gesture_recognition import detect_custom_gesture
-from app.gesture_responder import overlay_gesture_animation, overlay_centered_animation
+from app.gesture_responder import overlay_centered_animation  # ✅ cleaner import
 from app.conversation_manager import greet_user_by_role
 from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
@@ -121,14 +121,11 @@ def main():
                 gesture_last_time = current_time
 
             if last_gesture and current_time - gesture_last_time < gesture_display_duration:
-                black_frame = overlay_gesture_animation(
+                black_frame = overlay_centered_animation(
                     black_frame,
                     last_gesture,
                     gesture_last_time,
-                    duration=gesture_display_duration,
-                    x=black_frame.shape[1] // 2 - 100,
-                    y=black_frame.shape[0] // 2 - 100,
-                    scale=0.3
+                    duration=gesture_display_duration
                 )
 
         if show_typing_prompt:
