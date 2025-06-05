@@ -8,11 +8,17 @@ import textwrap
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.hi_wave_detector import detect_wave
 from app.gesture_recognition import detect_custom_gesture
-from app.gesture_responder import overlay_centered_animation  # ✅ cleaner import
+from app.gesture_responder import overlay_centered_animation
 from app.conversation_manager import greet_user_by_role
 from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
 from app.subtitle_manager import get_current_subtitle
+from app.config import (  # ✅ Font & color settings
+    FONT,
+    FONT_SIZE_SMALL, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
+    FONT_THICKNESS,
+    COLOR_WHITE, COLOR_YELLOW, COLOR_GRAY, COLOR_PINK
+)
 
 show_typing_prompt = False
 registration_in_progress = False
@@ -103,7 +109,7 @@ def main():
         if interaction_start_time:
             if current_time - interaction_start_time < show_wave_message_duration:
                 cv2.putText(black_frame, "Hi detected!", (20, 50),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
+                            FONT, FONT_SIZE_LARGE, COLOR_YELLOW, FONT_THICKNESS)
 
                 black_frame = overlay_centered_animation(black_frame, "Speaking", interaction_start_time, duration=4.5)
 
@@ -111,7 +117,7 @@ def main():
                 if not last_gesture or current_time - gesture_last_time >= gesture_display_duration:
                     black_frame = overlay_centered_animation(black_frame, idle_animation_name, idle_start_time)
                 cv2.putText(black_frame, "Interaction Running...", (20, 50),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2)
+                            FONT, FONT_SIZE_MEDIUM, COLOR_GRAY, FONT_THICKNESS)
 
         if interaction_started and current_time - interaction_start_time >= gesture_start_delay:
             gesture = detect_custom_gesture(frame)
@@ -130,7 +136,7 @@ def main():
 
         if show_typing_prompt:
             cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
+                        FONT, FONT_SIZE_MEDIUM, COLOR_PINK, FONT_THICKNESS)
 
         user_view_small = cv2.resize(
             full_frame,
@@ -152,7 +158,7 @@ def main():
             for i, line in enumerate(wrapped_lines):
                 cv2.putText(final_display, line,
                             (20, subtitle_y + i * line_height),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
+                            FONT, FONT_SIZE_SMALL, COLOR_WHITE, FONT_THICKNESS)
 
         cv2.imshow(window_name, final_display)
         if cv2.waitKey(1) & 0xFF == ord('q'):
