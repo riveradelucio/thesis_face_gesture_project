@@ -13,28 +13,26 @@ from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
 from app.subtitle_manager import get_current_subtitle
 from app.config import (
-    # Fonts & Colors
     FONT,
     FONT_SIZE_SMALL, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
     FONT_THICKNESS,
     COLOR_WHITE, COLOR_YELLOW, COLOR_GRAY, COLOR_PINK,
-    # UI & Timing Constants
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME,
     IDLE_ANIMATION_NAME, IDLE_ANIMATION_DURATION,
     GESTURE_DISPLAY_DURATION, GESTURE_START_DELAY,
     SHOW_WAVE_MESSAGE_DURATION, RECOGNITION_TIMEOUT
 )
 
-# Global state flags
-show_typing_prompt = False
-registration_in_progress = False
-awaiting_wave = False
-
-# Initial idle state
-idle_start_time = time.time()
+# ✅ Define AppState class
+class AppState:
+    def __init__(self):
+        self.show_typing_prompt = False
+        self.registration_in_progress = False
+        self.awaiting_wave = False
+        self.idle_start_time = time.time()
 
 def main():
-    global show_typing_prompt, registration_in_progress, awaiting_wave, idle_start_time
+    state = AppState()
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -70,23 +68,23 @@ def main():
         recognized = any(face["recognized"] for face in faces)
         has_unrecognized_face = any(not face["recognized"] for face in faces)
 
-        if has_unrecognized_face and not recognized and not registration_in_progress:
+        if has_unrecognized_face and not recognized and not state.registration_in_progress:
             if unrecognized_start_time is None:
                 unrecognized_start_time = current_time
             elif current_time - unrecognized_start_time > RECOGNITION_TIMEOUT:
-                awaiting_wave = True
+                state.awaiting_wave = True
         else:
             unrecognized_start_time = None
-            awaiting_wave = False
+            state.awaiting_wave = False
 
-        if awaiting_wave and detect_wave(frame):
+        if state.awaiting_wave and detect_wave(frame):
             print("👋 Wave detected from unrecognized user. Starting registration.")
-            show_typing_prompt = True
-            registration_in_progress = True
-            awaiting_wave = False
+            state.show_typing_prompt = True
+            state.registration_in_progress = True
+            state.awaiting_wave = False
             threading.Thread(
                 target=run_registration_flow,
-                args=(frame.copy(),)
+                args=(frame.copy(), state)
             ).start()
 
         if recognized and not interaction_started:
@@ -101,10 +99,9 @@ def main():
 
         black_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
 
-        # Idle animation if not interacting
-        if not interaction_started and not registration_in_progress and (
+        if not interaction_started and not state.registration_in_progress and (
             not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION):
-            black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, idle_start_time)
+            black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, state.idle_start_time)
 
         if interaction_start_time:
             if current_time - interaction_start_time < SHOW_WAVE_MESSAGE_DURATION:
@@ -114,7 +111,7 @@ def main():
                     black_frame, "Speaking", interaction_start_time, duration=SHOW_WAVE_MESSAGE_DURATION)
             elif current_time - interaction_start_time >= GESTURE_START_DELAY:
                 if not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION:
-                    black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, idle_start_time)
+                    black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, state.idle_start_time)
                 cv2.putText(black_frame, "Interaction Running...", (20, 50),
                             FONT, FONT_SIZE_MEDIUM, COLOR_GRAY, FONT_THICKNESS)
 
@@ -133,7 +130,7 @@ def main():
                     duration=GESTURE_DISPLAY_DURATION
                 )
 
-        if show_typing_prompt:
+        if state.show_typing_prompt:
             cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
                         FONT, FONT_SIZE_MEDIUM, COLOR_PINK, FONT_THICKNESS)
 
@@ -166,11 +163,10 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
 
-def run_registration_flow(frame):
-    global show_typing_prompt, registration_in_progress
+def run_registration_flow(frame, state):
     handle_new_user_registration(frame)
-    show_typing_prompt = False
-    registration_in_progress = False
+    state.show_typing_prompt = False
+    state.registration_in_progress = False
 
 if __name__ == "__main__":
     main()
