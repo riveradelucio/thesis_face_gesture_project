@@ -1,6 +1,5 @@
 import cv2
 import time
-import os
 import threading
 import numpy as np
 import textwrap
@@ -13,18 +12,25 @@ from app.conversation_manager import greet_user_by_role
 from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
 from app.subtitle_manager import get_current_subtitle
-from app.config import (  # ✅ Font & color settings
+from app.config import (
+    # Fonts & Colors
     FONT,
     FONT_SIZE_SMALL, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
     FONT_THICKNESS,
-    COLOR_WHITE, COLOR_YELLOW, COLOR_GRAY, COLOR_PINK
+    COLOR_WHITE, COLOR_YELLOW, COLOR_GRAY, COLOR_PINK,
+    # UI & Timing Constants
+    WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME,
+    IDLE_ANIMATION_NAME, IDLE_ANIMATION_DURATION,
+    GESTURE_DISPLAY_DURATION, GESTURE_START_DELAY,
+    SHOW_WAVE_MESSAGE_DURATION, RECOGNITION_TIMEOUT
 )
 
+# Global state flags
 show_typing_prompt = False
 registration_in_progress = False
 awaiting_wave = False
 
-idle_animation_name = "Idle_state"
+# Initial idle state
 idle_start_time = time.time()
 
 def main():
@@ -42,19 +48,12 @@ def main():
     interaction_started = False
     interaction_start_time = None
     unrecognized_start_time = None
-    recognition_timeout = 5
 
-    show_wave_message_duration = 4.5
-    gesture_start_delay = 2
     last_gesture = None
     gesture_last_time = 0
-    gesture_display_duration = 2
 
-    window_width = 700
-    window_height = 500
-    window_name = "Face + Gesture Recognition"
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(window_name, window_width, window_height)
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
 
     while True:
         ret, frame = cap.read()
@@ -63,7 +62,6 @@ def main():
         frame = cv2.flip(frame, 1)
         frame_count += 1
         current_time = time.time()
-
         full_frame = frame.copy()
 
         if frame_count % 3 == 0:
@@ -75,7 +73,7 @@ def main():
         if has_unrecognized_face and not recognized and not registration_in_progress:
             if unrecognized_start_time is None:
                 unrecognized_start_time = current_time
-            elif current_time - unrecognized_start_time > recognition_timeout:
+            elif current_time - unrecognized_start_time > RECOGNITION_TIMEOUT:
                 awaiting_wave = True
         else:
             unrecognized_start_time = None
@@ -103,35 +101,36 @@ def main():
 
         black_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
 
-        if not interaction_started and not registration_in_progress and (not last_gesture or current_time - gesture_last_time >= gesture_display_duration):
-            black_frame = overlay_centered_animation(black_frame, idle_animation_name, idle_start_time)
+        # Idle animation if not interacting
+        if not interaction_started and not registration_in_progress and (
+            not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION):
+            black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, idle_start_time)
 
         if interaction_start_time:
-            if current_time - interaction_start_time < show_wave_message_duration:
+            if current_time - interaction_start_time < SHOW_WAVE_MESSAGE_DURATION:
                 cv2.putText(black_frame, "Hi detected!", (20, 50),
                             FONT, FONT_SIZE_LARGE, COLOR_YELLOW, FONT_THICKNESS)
-
-                black_frame = overlay_centered_animation(black_frame, "Speaking", interaction_start_time, duration=4.5)
-
-            elif current_time - interaction_start_time >= gesture_start_delay:
-                if not last_gesture or current_time - gesture_last_time >= gesture_display_duration:
-                    black_frame = overlay_centered_animation(black_frame, idle_animation_name, idle_start_time)
+                black_frame = overlay_centered_animation(
+                    black_frame, "Speaking", interaction_start_time, duration=SHOW_WAVE_MESSAGE_DURATION)
+            elif current_time - interaction_start_time >= GESTURE_START_DELAY:
+                if not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION:
+                    black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, idle_start_time)
                 cv2.putText(black_frame, "Interaction Running...", (20, 50),
                             FONT, FONT_SIZE_MEDIUM, COLOR_GRAY, FONT_THICKNESS)
 
-        if interaction_started and current_time - interaction_start_time >= gesture_start_delay:
+        if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
             gesture = detect_custom_gesture(frame)
-            if gesture and (gesture != last_gesture or current_time - gesture_last_time > gesture_display_duration):
+            if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
                 print(f"🖐️ Detected gesture: {gesture}")
                 last_gesture = gesture
                 gesture_last_time = current_time
 
-            if last_gesture and current_time - gesture_last_time < gesture_display_duration:
+            if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
                 black_frame = overlay_centered_animation(
                     black_frame,
                     last_gesture,
                     gesture_last_time,
-                    duration=gesture_display_duration
+                    duration=GESTURE_DISPLAY_DURATION
                 )
 
         if show_typing_prompt:
@@ -160,7 +159,7 @@ def main():
                             (20, subtitle_y + i * line_height),
                             FONT, FONT_SIZE_SMALL, COLOR_WHITE, FONT_THICKNESS)
 
-        cv2.imshow(window_name, final_display)
+        cv2.imshow(WINDOW_NAME, final_display)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
