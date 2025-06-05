@@ -12,18 +12,19 @@ from app.conversation_manager import greet_user_by_role
 from app.new_user_registration import handle_new_user_registration
 from app.role_database import USER_ROLES
 from app.subtitle_manager import get_current_subtitle
+from app.screen_camera_and_subtitles import add_user_preview, add_subtitles  # ✅ NEW
 from app.config import (
     FONT,
-    FONT_SIZE_SMALL, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
+    FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
     FONT_THICKNESS,
-    COLOR_WHITE, COLOR_YELLOW, COLOR_GRAY, COLOR_PINK,
+    COLOR_YELLOW, COLOR_GRAY, COLOR_PINK,
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME,
-    IDLE_ANIMATION_NAME, IDLE_ANIMATION_DURATION,
+    IDLE_ANIMATION_NAME,
     GESTURE_DISPLAY_DURATION, GESTURE_START_DELAY,
     SHOW_WAVE_MESSAGE_DURATION, RECOGNITION_TIMEOUT
 )
 
-# ✅ Define AppState class
+# ✅ App state grouped in a class
 class AppState:
     def __init__(self):
         self.show_typing_prompt = False
@@ -134,27 +135,12 @@ def main():
             cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
                         FONT, FONT_SIZE_MEDIUM, COLOR_PINK, FONT_THICKNESS)
 
-        user_view_small = cv2.resize(
-            full_frame,
-            (int(frame.shape[1] * 0.2), int(frame.shape[0] * 0.3)),
-            interpolation=cv2.INTER_AREA
-        )
-        final_display = black_frame.copy()
-        y_offset = final_display.shape[0] - user_view_small.shape[0] - 10
-        x_offset = final_display.shape[1] - user_view_small.shape[1] - 10
-        final_display[y_offset:y_offset + user_view_small.shape[0],
-                      x_offset:x_offset + user_view_small.shape[1]] = user_view_small
+        # ✅ Use helper to add camera preview
+        final_display = add_user_preview(black_frame.copy(), full_frame)
 
+        # ✅ Use helper to add subtitles
         subtitle_text = get_current_subtitle()
-        if subtitle_text:
-            max_line_width = 45
-            wrapped_lines = textwrap.wrap(subtitle_text, width=max_line_width)
-            line_height = 25
-            subtitle_y = final_display.shape[0] - line_height * len(wrapped_lines) - 10
-            for i, line in enumerate(wrapped_lines):
-                cv2.putText(final_display, line,
-                            (20, subtitle_y + i * line_height),
-                            FONT, FONT_SIZE_SMALL, COLOR_WHITE, FONT_THICKNESS)
+        final_display = add_subtitles(final_display, subtitle_text)
 
         cv2.imshow(WINDOW_NAME, final_display)
         if cv2.waitKey(1) & 0xFF == ord('q'):
