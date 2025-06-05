@@ -25,7 +25,7 @@ from app.config import (
     SHOW_WAVE_MESSAGE_DURATION, RECOGNITION_TIMEOUT
 )
 
-# ✅ State class to keep app variables together
+# ✅ Holds all dynamic app variables (so we avoid global variables)
 class AppState:
     def __init__(self):
         self.show_typing_prompt = False
@@ -36,11 +36,13 @@ class AppState:
 def main():
     state = AppState()
 
+    # Step 1: Initialize camera
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("❌ Error: Cannot access webcam.")
         return
 
+    # Step 2: Load known faces
     register_known_faces("known_faces")
 
     frame_count = 0
@@ -52,55 +54,58 @@ def main():
     last_gesture = None
     gesture_last_time = 0
 
+    # Step 3: Setup display window
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
 
     while True:
+        # Step 4: Capture and mirror frame
         ret, frame = cap.read()
         if not ret:
             break
+
         frame = cv2.flip(frame, 1)
         frame_count += 1
         current_time = time.time()
         full_frame = frame.copy()
 
-        # Only detect faces every 3 frames
+        # Step 5: Run face recognition every few frames
         if frame_count % 3 == 0:
             faces = detect_and_recognize(frame, scale_factor=0.3)
 
         recognized = any(face["recognized"] for face in faces)
         has_unrecognized_face = any(not face["recognized"] for face in faces)
 
-        # ✅ Check if someone unrecognized has been waiting too long
+        # Step 6: Check if new face should register
         unrecognized_start_time = check_for_registration_trigger(
             has_unrecognized_face, recognized, state, current_time,
             unrecognized_start_time, RECOGNITION_TIMEOUT
         )
 
-        # ✅ Start registration if a wave is detected
+        # Step 7: Check if new user waves to register
         check_wave_and_start_registration(frame, state)
 
-        # ✅ Start interaction if a known user waves
+        # Step 8: Check if known user waves to begin interaction
         if recognized and not interaction_started:
             interaction_started, interaction_start_time = start_interaction_if_wave(
                 frame, faces, interaction_started, current_time
             )
 
-        # ✅ Black background with animation area
+        # Step 9: Prepare background canvas
         black_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
 
-        # ✅ Show idle animation before anything starts
+        # Step 10: Show idle animation if nothing is happening
         if not interaction_started and not state.registration_in_progress and (
             not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION):
             black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, state.idle_start_time)
 
-        # ✅ Show messages like "Hi detected!" or "Interaction running..."
+        # Step 11: Show messages like "Hi detected!"
         black_frame = draw_interaction_status(
             black_frame, current_time, interaction_start_time,
             last_gesture, gesture_last_time, state
         )
 
-        # ✅ Gesture detection and animation
+        # Step 12: Handle gesture recognition and display
         if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
             gesture = detect_custom_gesture(frame)
             if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
@@ -116,21 +121,22 @@ def main():
                     duration=GESTURE_DISPLAY_DURATION
                 )
 
-        # ✅ Show typing prompt if needed
+        # Step 13: Show text if waiting for user to type name and role
         if state.show_typing_prompt:
             cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
                         FONT, FONT_SIZE_MEDIUM, COLOR_PINK, FONT_THICKNESS)
 
-        # ✅ Add camera preview and subtitles
+        # Step 14: Add small camera preview and subtitles
         final_display = add_user_preview(black_frame.copy(), full_frame)
         subtitle_text = get_current_subtitle()
         final_display = add_subtitles(final_display, subtitle_text)
 
-        # ✅ Show window
+        # Step 15: Display everything on screen
         cv2.imshow(WINDOW_NAME, final_display)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+    # Step 16: Cleanup camera and window
     cap.release()
     cv2.destroyAllWindows()
 
