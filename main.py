@@ -2,6 +2,9 @@ import cv2
 import time
 import threading
 import numpy as np
+import os
+import sys
+import subprocess  # ✅ New: for safe restart on Windows
 
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.gesture_recognition import detect_custom_gesture
@@ -31,6 +34,7 @@ class AppState:
         self.show_typing_prompt = False
         self.registration_in_progress = False
         self.awaiting_wave = False
+        self.request_restart = False  # ✅ Used to trigger full restart
         self.idle_start_time = time.time()
 
 def main():
@@ -59,6 +63,17 @@ def main():
     cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
 
     while True:
+        # ✅ Step 0: Restart system if flag is set
+        if state.request_restart:
+            print("♻️ Restarting entire system now...")
+            cap.release()
+            cv2.destroyAllWindows()
+
+            script_path = os.path.abspath(__file__)
+            print(f"[RESTART] Launching new process: {sys.executable} {script_path}")
+            subprocess.Popen([sys.executable, script_path])  # ✅ Safe restart
+            os._exit(0)  # ✅ Immediately terminate current process
+
         # Step 4: Capture and mirror frame
         ret, frame = cap.read()
         if not ret:

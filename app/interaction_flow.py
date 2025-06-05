@@ -48,9 +48,26 @@ def run_registration_flow(frame, state):
     """
     This runs in the background when a new user is registering.
     """
+    import os
+    import sys
+    import time
+
     handle_new_user_registration(frame)
-    state.show_typing_prompt = False
-    state.registration_in_progress = False
+
+    print("🔄 Requesting system restart...")
+    time.sleep(1)
+
+    state.request_restart = True
+
+    # ✅ Fallback in case main loop doesn’t restart
+    time.sleep(1)
+    os.execl(sys.executable, sys.executable, *sys.argv)
+
+
+
+
+
+
 
 
 def start_interaction_if_wave(frame, faces, interaction_started, current_time):
@@ -106,7 +123,7 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
             state.idle_start_time,
             duration=3.0
         )
-        cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
+        cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 50),
                     FONT, FONT_SIZE_MEDIUM, COLOR_PINK, FONT_THICKNESS)
 
     return black_frame
