@@ -99,7 +99,7 @@ def main():
             not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION):
             black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, state.idle_start_time)
 
-        # Step 11: Show messages like "Hi detected!"
+        # Step 11: Show messages like "Hi detected!" or interaction visuals
         black_frame = draw_interaction_status(
             black_frame, current_time, interaction_start_time,
             last_gesture, gesture_last_time, state
@@ -121,22 +121,17 @@ def main():
                     duration=GESTURE_DISPLAY_DURATION
                 )
 
-        # Step 13: Show text if waiting for user to type name and role
-        if state.show_typing_prompt:
-            cv2.putText(black_frame, "Please type your name and role on the keyboard...", (20, 460),
-                        FONT, FONT_SIZE_MEDIUM, COLOR_PINK, FONT_THICKNESS)
-
-        # Step 14: Add small camera preview and subtitles
+        # Step 13: Add small camera preview and subtitles
         final_display = add_user_preview(black_frame.copy(), full_frame)
         subtitle_text = get_current_subtitle()
         final_display = add_subtitles(final_display, subtitle_text)
 
-        # Step 15: Display everything on screen
+        # Step 14: Display everything on screen
         cv2.imshow(WINDOW_NAME, final_display)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # Step 16: Cleanup camera and window
+    # Step 15: Cleanup camera and window
     cap.release()
     cv2.destroyAllWindows()
 
