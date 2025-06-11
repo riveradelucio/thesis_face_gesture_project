@@ -73,6 +73,10 @@ def main():
         last_gesture = None
         gesture_last_time = 0
 
+        # ⏱️ Track how long wave is held
+        wave_start_time = None
+        REQUIRED_WAVE_DURATION = 1.8  # seconds
+
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
 
@@ -120,7 +124,7 @@ def main():
                 last_gesture, gesture_last_time, state
             )
 
-            # ✅ If interaction has started, check gestures FIRST, then wave as fallback
+            # ✅ If interaction has started, check gestures FIRST, then wave only if intentional
             if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
                 gesture = detect_custom_gesture(frame)
 
@@ -129,19 +133,24 @@ def main():
                     last_gesture = gesture
                     gesture_last_time = current_time
 
-                # ✅ Only check wave if NO gesture detected this frame
+                # ✅ Only check for goodbye wave if no gesture detected
                 elif not gesture:
                     if detect_wave(frame):
-                        print("👋 Goodbye wave detected. Ending interaction.")
+                        if wave_start_time is None:
+                            wave_start_time = current_time  # Start timing
+                        elif current_time - wave_start_time >= REQUIRED_WAVE_DURATION:
+                            print("👋 Goodbye wave confirmed. Ending interaction.")
 
-                        cap.release()
-                        cv2.destroyAllWindows()
+                            cap.release()
+                            cv2.destroyAllWindows()
 
-                        speak_in_background("Goodbye! I hope to see you again soon.")
-                        time.sleep(2)
-                        sys.exit(0)
+                            speak_in_background("Goodbye! I hope to see you again soon.")
+                            time.sleep(2)
+                            sys.exit(0)
+                    else:
+                        wave_start_time = None  # Reset if not waving
 
-                # ✅ Display current gesture animation if active
+                # ✅ Show gesture animation if active
                 if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
                     black_frame = overlay_centered_animation(
                         black_frame,
