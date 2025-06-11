@@ -120,26 +120,28 @@ def main():
                 last_gesture, gesture_last_time, state
             )
 
-            # ✅ If interaction has started, check gestures and wave = goodbye
+            # ✅ If interaction has started, check gestures FIRST, then wave as fallback
             if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
-                if detect_wave(frame):
-                    print("👋 Goodbye wave detected. Ending interaction.")
+                gesture = detect_custom_gesture(frame)
 
-                    cap.release()
-                    cv2.destroyAllWindows()
+                if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
+                    print(f"🖐️ Detected gesture: {gesture}")
+                    last_gesture = gesture
+                    gesture_last_time = current_time
 
-                    # ✅ Use safe background speech
-                    speak_in_background("Goodbye! I hope to see you again soon.")
-                    time.sleep(2)  # Wait a bit so speech plays before exit
-                    sys.exit(0)
+                # ✅ Only check wave if NO gesture detected this frame
+                elif not gesture:
+                    if detect_wave(frame):
+                        print("👋 Goodbye wave detected. Ending interaction.")
 
-                else:
-                    gesture = detect_custom_gesture(frame)
-                    if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
-                        print(f"🖐️ Detected gesture: {gesture}")
-                        last_gesture = gesture
-                        gesture_last_time = current_time
+                        cap.release()
+                        cv2.destroyAllWindows()
 
+                        speak_in_background("Goodbye! I hope to see you again soon.")
+                        time.sleep(2)
+                        sys.exit(0)
+
+                # ✅ Display current gesture animation if active
                 if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
                     black_frame = overlay_centered_animation(
                         black_frame,
