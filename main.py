@@ -12,7 +12,7 @@ from app.face_recognition import detect_and_recognize, register_known_faces
 from app.gesture_recognition import detect_custom_gesture
 from app.gesture_responder import overlay_centered_animation
 from app.role_database import USER_ROLES
-from app.subtitle_manager import get_current_subtitle, update_subtitle
+from app.subtitle_manager import get_current_subtitle
 from app.screen_camera_and_subtitles import add_user_preview, add_subtitles
 from app.text_to_speech import speak_text
 from app.hi_wave_detector import detect_wave
@@ -22,7 +22,8 @@ from app.interaction_flow import (
     check_wave_and_start_registration,
     start_interaction_if_wave,
     draw_interaction_status,
-    run_registration_flow
+    run_registration_flow,
+    handle_goodbye_wave  # ✅ NEW: import clean goodbye handler
 )
 
 from app.config import (
@@ -73,7 +74,6 @@ def main():
         last_gesture = None
         gesture_last_time = 0
 
-        # ⏱️ Track how long wave is held
         wave_start_time = None
         REQUIRED_WAVE_DURATION = 1.8  # seconds
 
@@ -124,7 +124,7 @@ def main():
                 last_gesture, gesture_last_time, state
             )
 
-            # ✅ If interaction has started, check gestures FIRST, then wave only if intentional
+            # ✅ Check gestures first, wave to end only if nothing else
             if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
                 gesture = detect_custom_gesture(frame)
 
@@ -133,37 +133,15 @@ def main():
                     last_gesture = gesture
                     gesture_last_time = current_time
 
-                # ✅ Only check for goodbye wave if no gesture detected
                 elif not gesture:
                     if detect_wave(frame):
                         if wave_start_time is None:
-                            wave_start_time = current_time  # Start timing
+                            wave_start_time = current_time
                         elif current_time - wave_start_time >= REQUIRED_WAVE_DURATION:
-                            print("👋 Goodbye wave confirmed. Ending interaction.")
-
-                            # ✅ Show Waving animation before closing
-                            update_subtitle("Goodbye! I hope to see you again soon.")
-                            start_anim_time = time.time()
-                            while time.time() - start_anim_time < 4:
-                                anim_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
-                                anim_frame = overlay_centered_animation(anim_frame, "Waving", start_anim_time, duration=4)
-                                final_display = add_user_preview(anim_frame.copy(), full_frame)
-                                subtitle_text = get_current_subtitle()
-                                final_display = add_subtitles(final_display, subtitle_text)
-                                cv2.imshow(WINDOW_NAME, final_display)
-                                if cv2.waitKey(1) & 0xFF == ord('q'):
-                                    break
-
-                            cap.release()
-                            cv2.destroyAllWindows()
-
-                            speak_in_background("Goodbye! I hope to see you again soon.")
-                            time.sleep(2)
-                            sys.exit(0)
+                            handle_goodbye_wave(frame, full_frame, cap)
                     else:
-                        wave_start_time = None  # Reset if not waving
+                        wave_start_time = None
 
-                # ✅ Show gesture animation if active
                 if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
                     black_frame = overlay_centered_animation(
                         black_frame,
