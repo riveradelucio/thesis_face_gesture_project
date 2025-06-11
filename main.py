@@ -23,7 +23,7 @@ from app.interaction_flow import (
     start_interaction_if_wave,
     draw_interaction_status,
     run_registration_flow,
-    handle_goodbye_wave  # ✅ NEW: import clean goodbye handler
+    handle_goodbye_wave
 )
 
 from app.config import (
@@ -35,10 +35,12 @@ from app.config import (
     SHOW_WAVE_MESSAGE_DURATION, RECOGNITION_TIMEOUT
 )
 
-# ✅ Thread-safe way to speak text
+# Thread-safe way to speak text
+
 def speak_in_background(message: str):
     thread = threading.Thread(target=speak_text, args=(message,))
     thread.start()
+
 
 class AppState:
     def __init__(self):
@@ -48,19 +50,20 @@ class AppState:
         self.request_restart = False
         self.idle_start_time = time.time()
 
+
 def main():
     while True:
         state = AppState()
 
         if state.request_restart:
-            print("♻️ Restarting entire system now...")
+            print("\u267b\ufe0f Restarting entire system now...")
             script_path = os.path.abspath(__file__)
             subprocess.Popen([sys.executable, script_path])
             sys.exit(0)
 
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
-            print("❌ Error: Cannot access webcam.")
+            print("\u274c Error: Cannot access webcam.")
             return
 
         register_known_faces("known_faces")
@@ -75,10 +78,17 @@ def main():
         gesture_last_time = 0
 
         wave_start_time = None
-        REQUIRED_WAVE_DURATION = 1.8  # seconds
+        REQUIRED_WAVE_DURATION = 1.8
 
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        # Load and prepare background image
+        background_path = r"C:\\Users\\river\\OneDrive - Radboud Universiteit\\Documenten\\GitHub\\thesis_face_gesture_project\\reactions\\Background\\house.png"
+        raw_bg = cv2.imread(background_path)
+        if raw_bg is None:
+            print(f"\u274c Failed to load background image at: {background_path}")
+            return
 
         user_requested_exit = False
 
@@ -113,7 +123,8 @@ def main():
                     frame, faces, interaction_started, current_time
                 )
 
-            black_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
+            background_image = cv2.resize(raw_bg, (int(frame.shape[1] * 0.8), frame.shape[0]))
+            black_frame = background_image.copy()
 
             if not interaction_started and not state.registration_in_progress and (
                 not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION):
@@ -124,12 +135,11 @@ def main():
                 last_gesture, gesture_last_time, state
             )
 
-            # ✅ Check gestures first, wave to end only if nothing else
             if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
                 gesture = detect_custom_gesture(frame)
 
                 if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
-                    print(f"🖐️ Detected gesture: {gesture}")
+                    print(f"\U0001f590\ufe0f Detected gesture: {gesture}")
                     last_gesture = gesture
                     gesture_last_time = current_time
 
@@ -164,6 +174,7 @@ def main():
 
         if user_requested_exit:
             break
+
 
 if __name__ == "__main__":
     main()

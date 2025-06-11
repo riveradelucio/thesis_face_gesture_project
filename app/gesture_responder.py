@@ -46,7 +46,7 @@ def overlay_gesture_animation(base_frame, gesture_name, start_time, duration=2, 
 
     # ✅ Fixed avatar position (consistent with main.py)
     x = 80
-    y = base_h // 2 - 100
+    y = base_h // 2 - 70
 
     x = max(0, min(x, base_w - w))
     y = max(0, min(y, base_h - h))
