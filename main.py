@@ -1,3 +1,5 @@
+# main.py
+
 import cv2
 import time
 import threading
@@ -12,6 +14,9 @@ from app.gesture_responder import overlay_centered_animation
 from app.role_database import USER_ROLES
 from app.subtitle_manager import get_current_subtitle
 from app.screen_camera_and_subtitles import add_user_preview, add_subtitles
+from app.text_to_speech import speak_text
+from app.hi_wave_detector import detect_wave  # ✅ NEW: wave = goodbye
+
 from app.interaction_flow import (
     check_for_registration_trigger,
     check_wave_and_start_registration,
@@ -109,12 +114,21 @@ def main():
                 last_gesture, gesture_last_time, state
             )
 
+            # ✅ If interaction has started, check gestures and wave = goodbye
             if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
-                gesture = detect_custom_gesture(frame)
-                if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
-                    print(f"🖐️ Detected gesture: {gesture}")
-                    last_gesture = gesture
+                if detect_wave(frame):
+                    print("👋 Goodbye wave detected. Ending interaction.")
+                    speak_text("Goodbye! I hope to see you again soon.")
+                    last_gesture = "Goodbye"
                     gesture_last_time = current_time
+                    interaction_started = False
+                    interaction_start_time = None
+                else:
+                    gesture = detect_custom_gesture(frame)
+                    if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
+                        print(f"🖐️ Detected gesture: {gesture}")
+                        last_gesture = gesture
+                        gesture_last_time = current_time
 
                 if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
                     black_frame = overlay_centered_animation(
