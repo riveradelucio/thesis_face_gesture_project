@@ -12,7 +12,7 @@ from app.face_recognition import detect_and_recognize, register_known_faces
 from app.gesture_recognition import detect_custom_gesture
 from app.gesture_responder import overlay_centered_animation
 from app.role_database import USER_ROLES
-from app.subtitle_manager import get_current_subtitle
+from app.subtitle_manager import get_current_subtitle, update_subtitle
 from app.screen_camera_and_subtitles import add_user_preview, add_subtitles
 from app.text_to_speech import speak_text
 from app.hi_wave_detector import detect_wave
@@ -140,6 +140,19 @@ def main():
                             wave_start_time = current_time  # Start timing
                         elif current_time - wave_start_time >= REQUIRED_WAVE_DURATION:
                             print("👋 Goodbye wave confirmed. Ending interaction.")
+
+                            # ✅ Show Waving animation before closing
+                            update_subtitle("Goodbye! I hope to see you again soon.")
+                            start_anim_time = time.time()
+                            while time.time() - start_anim_time < 4:
+                                anim_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
+                                anim_frame = overlay_centered_animation(anim_frame, "Waving", start_anim_time, duration=4)
+                                final_display = add_user_preview(anim_frame.copy(), full_frame)
+                                subtitle_text = get_current_subtitle()
+                                final_display = add_subtitles(final_display, subtitle_text)
+                                cv2.imshow(WINDOW_NAME, final_display)
+                                if cv2.waitKey(1) & 0xFF == ord('q'):
+                                    break
 
                             cap.release()
                             cv2.destroyAllWindows()
