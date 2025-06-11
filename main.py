@@ -15,7 +15,7 @@ from app.role_database import USER_ROLES
 from app.subtitle_manager import get_current_subtitle
 from app.screen_camera_and_subtitles import add_user_preview, add_subtitles
 from app.text_to_speech import speak_text
-from app.hi_wave_detector import detect_wave  # ✅ NEW: wave = goodbye
+from app.hi_wave_detector import detect_wave
 
 from app.interaction_flow import (
     check_for_registration_trigger,
@@ -24,6 +24,7 @@ from app.interaction_flow import (
     draw_interaction_status,
     run_registration_flow
 )
+
 from app.config import (
     FONT, FONT_SIZE_MEDIUM, FONT_THICKNESS,
     COLOR_PINK,
@@ -32,6 +33,11 @@ from app.config import (
     GESTURE_DISPLAY_DURATION, GESTURE_START_DELAY,
     SHOW_WAVE_MESSAGE_DURATION, RECOGNITION_TIMEOUT
 )
+
+# ✅ Thread-safe way to speak text
+def speak_in_background(message: str):
+    thread = threading.Thread(target=speak_text, args=(message,))
+    thread.start()
 
 class AppState:
     def __init__(self):
@@ -118,11 +124,15 @@ def main():
             if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
                 if detect_wave(frame):
                     print("👋 Goodbye wave detected. Ending interaction.")
-                    speak_text("Goodbye! I hope to see you again soon.")
-                    last_gesture = "Goodbye"
-                    gesture_last_time = current_time
-                    interaction_started = False
-                    interaction_start_time = None
+
+                    cap.release()
+                    cv2.destroyAllWindows()
+
+                    # ✅ Use safe background speech
+                    speak_in_background("Goodbye! I hope to see you again soon.")
+                    time.sleep(2)  # Wait a bit so speech plays before exit
+                    sys.exit(0)
+
                 else:
                     gesture = detect_custom_gesture(frame)
                     if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
