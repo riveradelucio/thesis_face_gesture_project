@@ -44,7 +44,6 @@ def check_wave_and_start_registration(frame, state):
 
 def run_registration_flow(frame, state):
     handle_new_user_registration(frame)
-
     print("🔄 Registration complete. Requesting system restart...")
     time.sleep(1)
     state.request_restart = True
@@ -100,36 +99,43 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
 
 
 def handle_goodbye_wave(frame, full_frame, cap):
-    from app.subtitle_manager import update_subtitle  # ✅ Import here to avoid circular imports
+    from app.subtitle_manager import update_subtitle
+    from app.screen_camera_and_subtitles import add_subtitles
+    from app.gesture_responder import overlay_centered_animation
+    from app.text_to_speech import speak_text
+    import threading
 
     print("👋 Goodbye wave detected.")
-    
+
     message = "Goodbye! See you next time."
-    update_subtitle(message)         # ✅ Show subtitle
-    speak_text(message)              # 🎤 Speak the message
+    update_subtitle(message)
 
-    goodbye_start_time = time.time()
-    duration = 2.5  # Show animation for 3.5 seconds
+    # 🗣️ Start speech in parallel
+    tts_thread = threading.Thread(target=speak_text, args=(message,))
+    tts_thread.start()
 
-    # Load background consistently
-    background_image = cv2.resize(RAW_BACKGROUND, (int(frame.shape[1] * 0.8), frame.shape[0]))
+    start_time = time.time()
+    max_duration = 4.0  # Total allowed display time
 
-    while time.time() - goodbye_start_time < duration:
-        goodbye_frame = background_image.copy()
+    while time.time() - start_time < max_duration or tts_thread.is_alive():
+        goodbye_frame = cv2.resize(RAW_BACKGROUND, (int(frame.shape[1] * 0.8), frame.shape[0]))
+
         goodbye_frame = overlay_centered_animation(
             goodbye_frame,
-            "Goodbye",
-            goodbye_start_time,
-            duration=duration
+            "Waving",
+            start_time,
+            duration=max_duration
         )
 
-        # ✅ Also display subtitles on this frame
-        from app.screen_camera_and_subtitles import add_subtitles
         goodbye_frame = add_subtitles(goodbye_frame, message)
 
         cv2.imshow("Face + Gesture Recognition", goodbye_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+    # ✅ Make sure speech is done
+    if tts_thread.is_alive():
+        tts_thread.join(timeout=1.0)
 
     cap.release()
     cv2.destroyAllWindows()
