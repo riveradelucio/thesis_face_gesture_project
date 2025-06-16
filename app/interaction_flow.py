@@ -109,8 +109,7 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
             state.idle_start_time,
             duration=3.0
         )
-        cv2.putText(black_frame, "Please type your name\nand role on the keyboard...", (20, 420),
-                    FONT, FONT_SIZE_MEDIUM, COLOR_PINK, FONT_THICKNESS)
+
 
     return black_frame
 
