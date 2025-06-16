@@ -13,7 +13,8 @@ FONT_SIZE_MEDIUM = 0.6
 FONT_SIZE_LARGE = 1.0
 
 # Font Thickness
-FONT_THICKNESS = 1
+FONT_THICKNESS = 1                 # For regular UI and subtitles
+FONT_THICKNESS_GESTURE = 2        # Thicker font for gesture labels
 
 # ==========================
 # Color Definitions (BGR)
@@ -53,7 +54,6 @@ RECOGNITION_TIMEOUT = 5  # Seconds to wait before prompting wave
 # ==========================
 
 BACKGROUND_PATH = r"C:\Users\river\OneDrive - Radboud Universiteit\Documenten\GitHub\thesis_face_gesture_project\reactions\Background\house.png"
-
 RAW_BACKGROUND = cv2.imread(BACKGROUND_PATH)
 
 if RAW_BACKGROUND is None:

@@ -27,7 +27,8 @@ from app.interaction_flow import (
 )
 
 from app.config import (
-    FONT, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE, FONT_THICKNESS,
+    FONT, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
+    FONT_THICKNESS, FONT_THICKNESS_GESTURE,
     COLOR_PINK, COLOR_YELLOW,
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME,
     IDLE_ANIMATION_NAME,
@@ -163,7 +164,7 @@ def main():
                         FONT,
                         FONT_SIZE_LARGE,
                         COLOR_YELLOW,
-                        FONT_THICKNESS
+                        FONT_THICKNESS_GESTURE  # 👈 Thicker for gesture label
                     )
 
             # Final UI steps: add camera preview + subtitles
