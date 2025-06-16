@@ -27,8 +27,8 @@ from app.interaction_flow import (
 )
 
 from app.config import (
-    FONT, FONT_SIZE_MEDIUM, FONT_THICKNESS,
-    COLOR_PINK,
+    FONT, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE, FONT_THICKNESS,
+    COLOR_PINK, COLOR_YELLOW,
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME,
     IDLE_ANIMATION_NAME,
     GESTURE_DISPLAY_DURATION, GESTURE_START_DELAY,
@@ -147,6 +147,7 @@ def main():
                         wave_start_time = None
 
                 if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
+                    # 🎞️ Show gesture animation
                     black_frame = overlay_centered_animation(
                         black_frame,
                         last_gesture,
@@ -154,6 +155,18 @@ def main():
                         duration=GESTURE_DISPLAY_DURATION
                     )
 
+                    # ✨ Show gesture name as text (top left)
+                    cv2.putText(
+                        black_frame,
+                        f"{last_gesture.replace('_', ' ')} detected!",
+                        (20, 50),
+                        FONT,
+                        FONT_SIZE_LARGE,
+                        COLOR_YELLOW,
+                        FONT_THICKNESS
+                    )
+
+            # Final UI steps: add camera preview + subtitles
             final_display = add_user_preview(black_frame.copy(), full_frame)
             subtitle_text = get_current_subtitle()
             final_display = add_subtitles(final_display, subtitle_text)
