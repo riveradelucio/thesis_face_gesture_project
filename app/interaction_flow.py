@@ -8,7 +8,7 @@ from app.gesture_responder import overlay_centered_animation
 from app.text_to_speech import speak_text
 
 from app.config import (
-    FONT, FONT_SIZE_LARGE, FONT_SIZE_MEDIUM, FONT_THICKNESS,
+    FONT, FONT_SIZE_LARGE, FONT_SIZE_MEDIUM, FONT_SIZE_SMALL, FONT_THICKNESS,
     COLOR_YELLOW, COLOR_GRAY, COLOR_PINK,
     IDLE_ANIMATION_NAME, GESTURE_DISPLAY_DURATION,
     GESTURE_START_DELAY, SHOW_WAVE_MESSAGE_DURATION,
@@ -99,8 +99,8 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
                     IDLE_ANIMATION_NAME,
                     state.idle_start_time
                 )
-            cv2.putText(black_frame, "Interaction Running...", (20, 50),
-                        FONT, FONT_SIZE_MEDIUM, COLOR_GRAY, FONT_THICKNESS)
+            cv2.putText(black_frame, "Interaction Running...", (180, 20),
+                        FONT, FONT_SIZE_SMALL, COLOR_GRAY, FONT_THICKNESS)
 
     if state.show_typing_prompt:
         black_frame = overlay_centered_animation(
