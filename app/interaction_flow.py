@@ -1,24 +1,19 @@
-# interaction_flow.py
-
 import threading
 import time
-import os
-import sys
 import cv2
-import numpy as np
 
 from app.new_user_registration import handle_new_user_registration
 from app.conversation_manager import greet_user_by_role
 from app.gesture_responder import overlay_centered_animation
+from app.text_to_speech import speak_text
+
 from app.config import (
     FONT, FONT_SIZE_LARGE, FONT_SIZE_MEDIUM, FONT_THICKNESS,
     COLOR_YELLOW, COLOR_GRAY, COLOR_PINK,
     IDLE_ANIMATION_NAME, GESTURE_DISPLAY_DURATION,
-    GESTURE_START_DELAY, SHOW_WAVE_MESSAGE_DURATION
+    GESTURE_START_DELAY, SHOW_WAVE_MESSAGE_DURATION,
+    RAW_BACKGROUND
 )
-from app.subtitle_manager import update_subtitle, get_current_subtitle
-from app.screen_camera_and_subtitles import add_user_preview, add_subtitles
-from app.text_to_speech import speak_text
 
 
 def check_for_registration_trigger(has_unrecognized_face, recognized, state, current_time, unrecognized_start_time, recognition_timeout):
@@ -105,32 +100,39 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
 
 
 def handle_goodbye_wave(frame, full_frame, cap):
-    """
-    Show waving animation, subtitle, speak goodbye, and cleanly shut down system.
-    """
-    print("👋 Goodbye wave confirmed. Ending interaction.")
-    update_subtitle("Goodbye! I hope to see you again soon.")
+    from app.subtitle_manager import update_subtitle  # ✅ Import here to avoid circular imports
 
-    start_anim_time = time.time()
-    duration = 4  # seconds
+    print("👋 Goodbye wave detected.")
+    
+    message = "Goodbye! See you next time."
+    update_subtitle(message)         # ✅ Show subtitle
+    speak_text(message)              # 🎤 Speak the message
 
-    while time.time() - start_anim_time < duration:
-        anim_frame = np.zeros((frame.shape[0], int(frame.shape[1] * 0.8), 3), dtype=np.uint8)
-        anim_frame = overlay_centered_animation(anim_frame, "Waving", start_anim_time, duration=duration)
-        final_display = add_user_preview(anim_frame.copy(), full_frame)
-        subtitle_text = get_current_subtitle()
-        final_display = add_subtitles(final_display, subtitle_text)
-        cv2.imshow("Face + Gesture Recognition", final_display)
+    goodbye_start_time = time.time()
+    duration = 2.5  # Show animation for 3.5 seconds
+
+    # Load background consistently
+    background_image = cv2.resize(RAW_BACKGROUND, (int(frame.shape[1] * 0.8), frame.shape[0]))
+
+    while time.time() - goodbye_start_time < duration:
+        goodbye_frame = background_image.copy()
+        goodbye_frame = overlay_centered_animation(
+            goodbye_frame,
+            "Goodbye",
+            goodbye_start_time,
+            duration=duration
+        )
+
+        # ✅ Also display subtitles on this frame
+        from app.screen_camera_and_subtitles import add_subtitles
+        goodbye_frame = add_subtitles(goodbye_frame, message)
+
+        cv2.imshow("Face + Gesture Recognition", goodbye_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cap.release()
     cv2.destroyAllWindows()
+    print("👋 Interaction closed.")
+    exit(0)
 
-    def speak_in_background(message: str):
-        thread = threading.Thread(target=speak_text, args=(message,))
-        thread.start()
-
-    speak_in_background("Goodbye! I hope to see you again soon.")
-    time.sleep(2)
-    sys.exit(0)

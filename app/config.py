@@ -1,4 +1,5 @@
 import cv2
+import os
 
 # ==========================
 # Font Settings
@@ -46,3 +47,14 @@ SHOW_WAVE_MESSAGE_DURATION = 4.5
 # ==========================
 
 RECOGNITION_TIMEOUT = 5  # Seconds to wait before prompting wave
+
+# ==========================
+# Global Background Image
+# ==========================
+
+BACKGROUND_PATH = r"C:\Users\river\OneDrive - Radboud Universiteit\Documenten\GitHub\thesis_face_gesture_project\reactions\Background\house.png"
+
+RAW_BACKGROUND = cv2.imread(BACKGROUND_PATH)
+
+if RAW_BACKGROUND is None:
+    raise FileNotFoundError(f"❌ Background image not found at: {BACKGROUND_PATH}")
