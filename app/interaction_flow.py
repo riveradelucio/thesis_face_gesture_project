@@ -15,9 +15,17 @@ from app.config import (
     RAW_BACKGROUND
 )
 
-
 def check_for_registration_trigger(has_unrecognized_face, recognized, state, current_time, unrecognized_start_time, recognition_timeout):
-    if has_unrecognized_face and not recognized and not state.registration_in_progress:
+    """
+    Check if we should prepare to register a new user.
+    Avoid triggering registration if already interacting with someone recognized.
+    """
+    # ✅ FIX: Skip registration if already interacting or recognized
+    if state.registration_in_progress or recognized:
+        state.awaiting_wave = False
+        return None
+
+    if has_unrecognized_face:
         if unrecognized_start_time is None:
             return current_time
         elif current_time - unrecognized_start_time > recognition_timeout:
@@ -25,10 +33,13 @@ def check_for_registration_trigger(has_unrecognized_face, recognized, state, cur
     else:
         state.awaiting_wave = False
         return None
+
     return unrecognized_start_time
 
-
 def check_wave_and_start_registration(frame, state):
+    """
+    If waving and waiting to register, start the registration process.
+    """
     from app.hi_wave_detector import detect_wave
 
     if state.awaiting_wave and detect_wave(frame):
@@ -41,15 +52,19 @@ def check_wave_and_start_registration(frame, state):
             args=(frame.copy(), state)
         ).start()
 
-
 def run_registration_flow(frame, state):
+    """
+    Handle user input and complete new user registration.
+    """
     handle_new_user_registration(frame)
     print("🔄 Registration complete. Requesting system restart...")
     time.sleep(1)
     state.request_restart = True
 
-
 def start_interaction_if_wave(frame, faces, interaction_started, current_time):
+    """
+    If a wave is detected and someone is recognized, start interaction.
+    """
     from app.hi_wave_detector import detect_wave
 
     if detect_wave(frame):
@@ -62,8 +77,10 @@ def start_interaction_if_wave(frame, faces, interaction_started, current_time):
         return interaction_started, current_time
     return interaction_started, None
 
-
 def draw_interaction_status(black_frame, current_time, interaction_start_time, last_gesture, gesture_last_time, state):
+    """
+    Draw overlays and text depending on the app's state and interaction flow.
+    """
     if interaction_start_time:
         time_since_start = current_time - interaction_start_time
         if time_since_start < SHOW_WAVE_MESSAGE_DURATION:
@@ -97,8 +114,10 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
 
     return black_frame
 
-
 def handle_goodbye_wave(frame, full_frame, cap):
+    """
+    Show goodbye animation and speak farewell message before closing.
+    """
     from app.subtitle_manager import update_subtitle
     from app.screen_camera_and_subtitles import add_subtitles
     from app.gesture_responder import overlay_centered_animation
@@ -141,4 +160,3 @@ def handle_goodbye_wave(frame, full_frame, cap):
     cv2.destroyAllWindows()
     print("👋 Interaction closed.")
     exit(0)
-
