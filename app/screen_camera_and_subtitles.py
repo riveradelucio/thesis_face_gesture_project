@@ -8,16 +8,6 @@ from app.config import (
 def add_user_preview(frame, full_frame, width_ratio=0.2, height_ratio=0.3, padding=10):
     """
     Adds a small preview of the user's camera feed to the bottom-right corner.
-    
-    Args:
-        frame: The main black frame to draw on.
-        full_frame: The full camera image.
-        width_ratio: The width of the preview relative to full_frame.
-        height_ratio: The height of the preview relative to full_frame.
-        padding: Space from the edge.
-
-    Returns:
-        Frame with the preview overlay added.
     """
     user_view_small = cv2.resize(
         full_frame,
@@ -36,17 +26,7 @@ def add_user_preview(frame, full_frame, width_ratio=0.2, height_ratio=0.3, paddi
 
 def add_subtitles(frame, text, max_line_width=45, line_height=25, padding=10):
     """
-    Adds wrapped subtitle text to the bottom of the frame.
-
-    Args:
-        frame: The image frame to draw on.
-        text: The subtitle string.
-        max_line_width: Number of characters before wrapping.
-        line_height: Vertical spacing between lines.
-        padding: Space from bottom of the frame.
-
-    Returns:
-        Frame with subtitle text drawn.
+    Adds wrapped subtitle text to the bottom of the frame with bold outline, no background.
     """
     if not text:
         return frame
@@ -55,8 +35,14 @@ def add_subtitles(frame, text, max_line_width=45, line_height=25, padding=10):
     subtitle_y = frame.shape[0] - line_height * len(wrapped_lines) - padding
 
     for i, line in enumerate(wrapped_lines):
-        cv2.putText(frame, line,
-                    (20, subtitle_y + i * line_height),
+        y = subtitle_y + i * line_height
+
+        # Step 1: Draw black outline (shadow)
+        cv2.putText(frame, line, (20, y),
+                    FONT, FONT_SIZE_SMALL, (0, 0, 0), FONT_THICKNESS + 2)
+
+        # Step 2: Draw white text on top
+        cv2.putText(frame, line, (20, y),
                     FONT, FONT_SIZE_SMALL, COLOR_WHITE, FONT_THICKNESS)
 
     return frame

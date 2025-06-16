@@ -13,7 +13,7 @@ FONT_SIZE_MEDIUM = 0.6
 FONT_SIZE_LARGE = 1.0
 
 # Font Thickness
-FONT_THICKNESS = 2
+FONT_THICKNESS = 1
 
 # ==========================
 # Color Definitions (BGR)
