@@ -4,13 +4,11 @@ import cv2
 import time
 import numpy as np
 from datetime import datetime
-import threading
-
+from dumb.dumb_user_registration import handle_dumb_user_registration
 from app.config import RAW_BACKGROUND, WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT
 from app.gesture_responder import overlay_centered_animation
 from app.screen_camera_and_subtitles import add_subtitles
 from app.subtitle_manager import update_subtitle
-from dumb.dumb_user_registration import handle_dumb_user_registration
 
 def detect_motion(frame, prev_frame, threshold=15):
     diff = cv2.absdiff(frame, prev_frame)
@@ -28,6 +26,7 @@ def main():
 
     last_trigger_time = 0
     cooldown = 10  # seconds to wait before reacting again
+    last_known_user = None
 
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -43,21 +42,9 @@ def main():
         motion_detected = detect_motion(frame, prev_frame)
         if motion_detected and (time.time() - last_trigger_time > cooldown):
             print("👀 Motion detected")
-
-            handle_dumb_user_registration()
-
-            # Display animation while speaking
-            start_time = time.time()
-            duration = 6  # Extended for full message display
-            while time.time() - start_time < duration:
-                frame_with_luis = overlay_centered_animation(background_frame.copy(), "Speaking", start_time, duration=duration)
-                frame_with_text = add_subtitles(frame_with_luis, "")
-                cv2.imshow(WINDOW_NAME, frame_with_text)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    cap.release()
-                    cv2.destroyAllWindows()
-                    return
-
+            last_known_user = handle_dumb_user_registration(
+                cap, WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT, last_known_user
+            )
             last_trigger_time = time.time()
 
         prev_frame = frame.copy()
