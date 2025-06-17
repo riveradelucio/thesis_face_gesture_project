@@ -35,23 +35,30 @@ def play_animation_during_speech(messages, cap, window_name, window_width, windo
 
 def handle_dumb_user_registration(cap, window_name, window_width, window_height, last_known_user=None):
     """
-    Dumb version of user registration. Asks for a name only once and remembers it during session.
+    Dumb version of user registration. Asks for name and reminder time.
+    The name and time are not stored permanently.
     """
     if last_known_user is None:
-        intro1 = "Hi there! I am Luis. I do not recognize you yet. Your face is new to me."
+        intro1 = "Hi there! I am Luis. I do not know you yet. Your are to new user to me."
         intro2 = "Could you please type your name on the keyboard so we can get to know each other?"
 
         play_animation_during_speech([intro1, intro2], cap, window_name, window_width, window_height)
 
         name = input("Enter your name: ").strip().capitalize()
 
+        ask_reminder = "At what time should I remind you to take your medication? Please type it as for example 3 PM or 08:30 AM."
+        play_animation_during_speech([ask_reminder], cap, window_name, window_width, window_height)
+
+        reminder_time = input("Enter your reminder time (e.g., 3 PM or 08:30 AM): ").strip()
+
         greeting = f"Hello {name}, it's nice to meet you."
     else:
         name = last_known_user
+        reminder_time = "3 PM"  # fallback if not passed
         greeting = f"Welcome back {name}, it's good to see you again."
 
     time_info = time.strftime("The time is %I:%M %p").lstrip("0").lower()
-    reminder = "This is your daily reminder to take your medication at 3 PM."
+    reminder = f"This is your daily reminder to take your medication at {reminder_time}."
 
     play_animation_during_speech([greeting, time_info, reminder], cap, window_name, window_width, window_height)
 
