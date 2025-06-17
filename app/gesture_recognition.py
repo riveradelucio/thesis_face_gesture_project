@@ -113,7 +113,6 @@ def is_thumb_only(lm_list, relaxed=False):
     else:
         folded_fingers = all(folded_scores)
 
-    print(f"[DEBUG] Thumb up: {thumb_up}, Folded: {folded_scores}, Final decision: {thumb_up and folded_fingers}")
     return thumb_up and folded_fingers
 
 def is_thumb_down(lm_list):
@@ -121,7 +120,6 @@ def is_thumb_down(lm_list):
     folded_scores = [lm_list[tip][2] > lm_list[tip - 2][2] for tip in finger_tips[1:]]
     folded_fingers = sum(folded_scores) >= 2  # More tolerant
 
-    print(f"[DEBUG] Thumb down: {thumb_down}, Folded: {folded_scores}, Final decision: {thumb_down and folded_fingers}")
     return thumb_down and folded_fingers
 
 def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
