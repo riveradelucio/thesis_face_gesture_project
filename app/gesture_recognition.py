@@ -104,23 +104,29 @@ def detect_custom_gesture(frame):
 
     return None
 
+def is_thumb_only(lm_list, relaxed=False):
+    thumb_up = lm_list[4][2] < lm_list[3][2]  # Thumb tip above IP joint
+    folded_scores = [lm_list[tip][2] > lm_list[tip - 2][2] for tip in finger_tips[1:]]
+
+    if relaxed:
+        folded_fingers = sum(folded_scores) >= 3
+    else:
+        folded_fingers = all(folded_scores)
+
+    print(f"[DEBUG] Thumb up: {thumb_up}, Folded: {folded_scores}, Final decision: {thumb_up and folded_fingers}")
+    return thumb_up and folded_fingers
+
 def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
     wrist = next((x for x in lm_list if x[0] == 0), None)
     thumb_tip = next((x for x in lm_list if x[0] == 4), None)
     thumb_ip = next((x for x in lm_list if x[0] == 3), None)
 
-    # Slightly more sensitive thumbs up
     if wrist and thumb_tip and thumb_ip:
-        folded_fingers = all(lm_list[tip][2] > lm_list[tip - 2][2] for tip in finger_tips[1:])
-        vertical_thumb = thumb_tip[2] < wrist[2] - 10
-        slight_angle = abs(thumb_tip[1] - thumb_ip[1]) > 10
-        if folded_fingers and (vertical_thumb or slight_angle):
-            return "Thumbs_Up"
-
-    if wrist and thumb_tip and thumb_ip:
-        folded_fingers = all(lm_list[tip][2] > lm_list[tip - 2][2] for tip in finger_tips[1:])
-        if folded_fingers and thumb_tip[2] > wrist[2] + 20:
-            return "Thumbs_Down"
+        if is_thumb_only(lm_list):
+            if thumb_tip[2] < wrist[2] - 10:
+                return "Thumbs_Up"
+            elif thumb_tip[2] > wrist[2] + 10:
+                return "Thumbs_Down"
 
     index_finger = next((x for x in lm_list if x[0] == 8), None)
     middle_tip = next((x for x in lm_list if x[0] == 12), None)

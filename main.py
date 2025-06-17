@@ -78,7 +78,7 @@ def main():
         REQUIRED_WAVE_DURATION = 1.8
 
         stable_gesture_buffer = []
-        STABLE_GESTURE_FRAMES = 2
+        STABLE_GESTURE_FRAMES = 3
         MIN_TIME_BETWEEN_GESTURES = 2
         gesture_cooldown_until = 0
 
