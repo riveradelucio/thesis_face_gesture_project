@@ -125,7 +125,7 @@ def handle_goodbye_wave(frame, full_frame, cap):
 
     print("👋 Goodbye wave detected.")
 
-    message = "Goodbye! See you next time."
+    message = "Take care and have a lovely day. I will see you again soon!."
     update_subtitle(message)
 
     # 🗣️ Start speech in parallel
