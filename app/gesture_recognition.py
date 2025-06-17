@@ -115,10 +115,7 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
     if lm_list[4][2] > lm_list[3][2] and all(lm_list[tip_id][2] > lm_list[tip_id - 2][2] for tip_id in finger_tips[1:]):
         return "Thumbs_Down"
 
-    if total_fingers == 0:
-        return "Fist"
-    elif total_fingers == 2 and fingers[1] == 1 and fingers[2] == 1:
-        return "Peace"
+    # "Fist" and "Peace" gestures removed
 
     index_finger = next((x for x in lm_list if x[0] == 8), None)
     middle_tip = next((x for x in lm_list if x[0] == 12), None)

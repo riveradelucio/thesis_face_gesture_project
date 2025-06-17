@@ -1,147 +1,188 @@
+# main.py
+
 import cv2
 import time
-import os
 import threading
+import numpy as np
+import os
+import sys
+import subprocess
 
 from app.face_recognition import detect_and_recognize, register_known_faces
-from app.hi_wave_detector import detect_wave
 from app.gesture_recognition import detect_custom_gesture
-from app.gesture_responder import overlay_gesture_animation
-from app.conversation_manager import greet_user_by_role
-from app.new_user_registration import handle_new_user_registration
+from app.gesture_responder import overlay_centered_animation
 from app.role_database import USER_ROLES
+from app.subtitle_manager import get_current_subtitle
+from app.screen_camera_and_subtitles import add_user_preview, add_subtitles
+from app.text_to_speech import speak_text
+from app.hi_wave_detector import detect_wave
 
-# ✅ Global flags
-show_typing_prompt = False
-registration_in_progress = False
-awaiting_wave = False
+from app.interaction_flow import (
+    check_for_registration_trigger,
+    check_wave_and_start_registration,
+    start_interaction_if_wave,
+    draw_interaction_status,
+    run_registration_flow,
+    handle_goodbye_wave
+)
+
+from app.config import (
+    FONT, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
+    FONT_THICKNESS, FONT_THICKNESS_GESTURE,
+    COLOR_PINK, COLOR_YELLOW,
+    WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME,
+    IDLE_ANIMATION_NAME,
+    GESTURE_DISPLAY_DURATION, GESTURE_START_DELAY,
+    SHOW_WAVE_MESSAGE_DURATION, RECOGNITION_TIMEOUT,
+    RAW_BACKGROUND
+)
+
+
+def speak_in_background(message: str):
+    thread = threading.Thread(target=speak_text, args=(message,))
+    thread.start()
+
+
+class AppState:
+    def __init__(self):
+        self.show_typing_prompt = False
+        self.registration_in_progress = False
+        self.awaiting_wave = False
+        self.request_restart = False
+        self.idle_start_time = time.time()
+
 
 def main():
-    global show_typing_prompt, registration_in_progress, awaiting_wave
-
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("❌ Error: Cannot access webcam.")
-        return
-
-    register_known_faces("known_faces")
-
-    frame_count = 0
-    faces = []
-    interaction_started = False
-    interaction_start_time = None
-    unrecognized_start_time = None
-    recognition_timeout = 5  # seconds
-
-    show_wave_message_duration = 2
-    gesture_start_delay = 2
-    last_gesture = None
-    gesture_last_time = 0
-    gesture_display_duration = 2
-
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv2.flip(frame, 1)
-        frame_count += 1
-        current_time = time.time()
+        state = AppState()
 
-        if frame_count % 3 == 0:
-            faces = detect_and_recognize(frame, scale_factor=0.3)
+        if state.request_restart:
+            print("♻️ Restarting entire system now...")
+            script_path = os.path.abspath(__file__)
+            subprocess.Popen([sys.executable, script_path])
+            sys.exit(0)
 
-        recognized = any(face["recognized"] for face in faces)
-        has_unrecognized_face = any(not face["recognized"] for face in faces)
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("❌ Error: Cannot access webcam.")
+            return
 
-        # Step 1: Draw face labels
-        for face in faces:
-            x1, y1, x2, y2 = face["bbox"]
-            label = face["name"]
-            color = (0, 180, 0) if face["recognized"] else (0, 0, 255)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(frame, label, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+        register_known_faces("known_faces")
 
-        # Step 2: Trigger registration if unrecognized + wave
-        if has_unrecognized_face and not recognized and not registration_in_progress:
-            if unrecognized_start_time is None:
-                unrecognized_start_time = current_time
-            elif current_time - unrecognized_start_time > recognition_timeout:                
-                awaiting_wave = True
-        else:
-            unrecognized_start_time = None
-            awaiting_wave = False
+        frame_count = 0
+        faces = []
+        interaction_started = False
+        interaction_start_time = None
+        unrecognized_start_time = None
 
-        # Step 3: Detect wave to confirm intent to register
-        if awaiting_wave and detect_wave(frame):
-            print("👋 Wave detected from unrecognized user. Starting registration.")
-            show_typing_prompt = True
-            registration_in_progress = True
-            awaiting_wave = False
-            threading.Thread(
-                target=run_registration_flow,
-                args=(frame.copy(),)
-            ).start()
+        last_gesture = None
+        gesture_last_time = 0
 
-        # Step 4: Detect wave from known user to start interaction
-        if recognized and not interaction_started:
-            if detect_wave(frame):
-                print("👋 Wave Detected! Starting interaction.")
-                interaction_started = True
-                interaction_start_time = current_time
-                for face in faces:
-                    if face["recognized"]:
-                        greet_user_by_role(face["name"])
-                        break
+        wave_start_time = None
+        REQUIRED_WAVE_DURATION = 1.8
 
-        # Step 5: Show greeting text
-        if interaction_start_time and current_time - interaction_start_time < show_wave_message_duration:
-            cv2.putText(frame, "Hi detected!", (20, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 100, 0), 3)
+        cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-        # Step 6: Gesture recognition
-        if interaction_started and current_time - interaction_start_time >= gesture_start_delay:
-            cv2.putText(frame, "Interaction Running...", (20, 460),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
+        user_requested_exit = False
 
-            gesture = detect_custom_gesture(frame)
-            if gesture and (gesture != last_gesture or current_time - gesture_last_time > gesture_display_duration):
-                print(f"🖐️ Detected gesture: {gesture}")
-                last_gesture = gesture
-                gesture_last_time = current_time
+        while True:
+            if state.request_restart:
+                break
 
-            if last_gesture and current_time - gesture_last_time < gesture_display_duration:
-                frame = overlay_gesture_animation(
-                    frame,
-                    last_gesture,
-                    gesture_last_time,
-                    duration=gesture_display_duration,
-                    x=600,
-                    y=600,
-                    scale=0.2
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame = cv2.flip(frame, 1)
+            frame_count += 1
+            current_time = time.time()
+            full_frame = frame.copy()
+
+            if frame_count % 3 == 0:
+                faces = detect_and_recognize(frame, scale_factor=0.3)
+
+            recognized = any(face["recognized"] for face in faces)
+            has_unrecognized_face = any(not face["recognized"] for face in faces)
+
+            unrecognized_start_time = check_for_registration_trigger(
+                has_unrecognized_face, recognized, state, current_time,
+                unrecognized_start_time, RECOGNITION_TIMEOUT
+            )
+
+            check_wave_and_start_registration(frame, state)
+
+            if recognized and not interaction_started:
+                interaction_started, interaction_start_time = start_interaction_if_wave(
+                    frame, faces, interaction_started, current_time
                 )
 
-        # Step 7: Show typing prompt during registration
-        if show_typing_prompt:
-            cv2.putText(frame, "Please type your name and role on the keyboard...", (20, 460),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (280, 180, 180), 2)
+            # 🏡 Always use the same background image
+            background_image = cv2.resize(RAW_BACKGROUND, (int(frame.shape[1] * 0.8), frame.shape[0]))
+            black_frame = background_image.copy()
 
-        # Step 8: Show camera
-        cv2.imshow("Face + Gesture Recognition", frame)
+            if not interaction_started and not state.registration_in_progress and (
+                not last_gesture or current_time - gesture_last_time >= GESTURE_DISPLAY_DURATION):
+                black_frame = overlay_centered_animation(black_frame, IDLE_ANIMATION_NAME, state.idle_start_time)
 
-        # Step 9: Exit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+            black_frame = draw_interaction_status(
+                black_frame, current_time, interaction_start_time,
+                last_gesture, gesture_last_time, state
+            )
+
+            if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
+                gesture = detect_custom_gesture(frame)
+
+                if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
+                    print(f"🖐️ Detected gesture: {gesture}")
+                    last_gesture = gesture
+                    gesture_last_time = current_time
+
+                elif not gesture:
+                    if detect_wave(frame):
+                        if wave_start_time is None:
+                            wave_start_time = current_time
+                        elif current_time - wave_start_time >= REQUIRED_WAVE_DURATION:
+                            handle_goodbye_wave(frame, full_frame, cap)
+                    else:
+                        wave_start_time = None
+
+                if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
+                    # 🎞️ Show gesture animation
+                    black_frame = overlay_centered_animation(
+                        black_frame,
+                        last_gesture,
+                        gesture_last_time,
+                        duration=GESTURE_DISPLAY_DURATION
+                    )
+
+                    # ✨ Show gesture name as text (top left)
+                    cv2.putText(
+                        black_frame,
+                        f"{last_gesture.replace('_', ' ')} detected!",
+                        (20, 50),
+                        FONT,
+                        FONT_SIZE_LARGE,
+                        COLOR_YELLOW,
+                        FONT_THICKNESS_GESTURE  # 👈 Thicker for gesture label
+                    )
+
+            # Final UI steps: add camera preview + subtitles
+            final_display = add_user_preview(black_frame.copy(), full_frame)
+            subtitle_text = get_current_subtitle()
+            final_display = add_subtitles(final_display, subtitle_text)
+
+            cv2.imshow(WINDOW_NAME, final_display)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                user_requested_exit = True
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+        if user_requested_exit:
             break
 
-    cap.release()
-    cv2.destroyAllWindows()
-
-# Step 10: Registration callback
-def run_registration_flow(frame):
-    global show_typing_prompt, registration_in_progress
-    handle_new_user_registration(frame)
-    show_typing_prompt = False
-    registration_in_progress = False
 
 if __name__ == "__main__":
     main()
