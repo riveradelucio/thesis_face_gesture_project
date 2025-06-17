@@ -104,18 +104,36 @@ def detect_custom_gesture(frame):
 
     return None
 
+def is_thumb_only(lm_list, relaxed=False):
+    thumb_up = lm_list[4][2] < lm_list[3][2]
+    folded_scores = [lm_list[tip][2] > lm_list[tip - 2][2] for tip in finger_tips[1:]]
+
+    if relaxed:
+        folded_fingers = sum(folded_scores) >= 3
+    else:
+        folded_fingers = all(folded_scores)
+
+    return thumb_up and folded_fingers
+
+def is_thumb_down(lm_list):
+    thumb_down = lm_list[4][2] > lm_list[3][2]
+    folded_scores = [lm_list[tip][2] > lm_list[tip - 2][2] for tip in finger_tips[1:]]
+    folded_fingers = sum(folded_scores) >= 2  # More tolerant
+
+    return thumb_down and folded_fingers
+
 def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
-    fingers = [1 if lm_list[4][2] < lm_list[3][2] else 0]
-    for tip_id in finger_tips[1:]:
-        fingers.append(1 if lm_list[tip_id][2] < lm_list[tip_id - 2][2] else 0)
-    total_fingers = sum(fingers)
+    wrist = next((x for x in lm_list if x[0] == 0), None)
+    thumb_tip = next((x for x in lm_list if x[0] == 4), None)
+    thumb_ip = next((x for x in lm_list if x[0] == 3), None)
 
-    if lm_list[4][2] < lm_list[3][2] and all(lm_list[tip_id][2] > lm_list[tip_id - 2][2] for tip_id in finger_tips[1:]):
-        return "Thumbs_Up"
-    if lm_list[4][2] > lm_list[3][2] and all(lm_list[tip_id][2] > lm_list[tip_id - 2][2] for tip_id in finger_tips[1:]):
-        return "Thumbs_Down"
-
-    # "Fist" and "Peace" gestures removed
+    if wrist and thumb_tip and thumb_ip:
+        if is_thumb_only(lm_list):
+            if thumb_tip[2] < wrist[2] - 10:
+                return "Thumbs_Up"
+        if is_thumb_down(lm_list):
+            if thumb_tip[2] > wrist[2] + 10:
+                return "Thumbs_Down"
 
     index_finger = next((x for x in lm_list if x[0] == 8), None)
     middle_tip = next((x for x in lm_list if x[0] == 12), None)
@@ -144,14 +162,18 @@ def _detect_one_hand(lm_list, mouth_pos, left_ear, right_ear):
 def _detect_two_hands(hand1, hand2, left_eye_pos, right_eye_pos):
     tips1 = [x for x in hand1 if x[0] in [8, 12, 16]]
     tips2 = [x for x in hand2 if x[0] in [8, 12, 16]]
+
     if left_eye_pos and right_eye_pos:
-        for tip1 in tips1:
-            for (ex, ey) in left_eye_pos:
-                if math.hypot(tip1[1] - ex, tip1[2] - ey) < 60:
-                    for tip2 in tips2:
-                        for (ex2, ey2) in right_eye_pos:
-                            if math.hypot(tip2[1] - ex2, tip2[2] - ey2) < 60:
-                                return "Cover_eyes"
+        left_detected = any(
+            math.hypot(t1[1] - ex, t1[2] - ey) < 80
+            for t1 in tips1 for (ex, ey) in left_eye_pos
+        )
+        right_detected = any(
+            math.hypot(t2[1] - ex, t2[2] - ey) < 80
+            for t2 in tips2 for (ex, ey) in right_eye_pos
+        )
+        if left_detected and right_detected:
+            return "Cover_eyes"
 
     thumb1 = next((x for x in hand1 if x[0] == 4), None)
     thumb2 = next((x for x in hand2 if x[0] == 4), None)

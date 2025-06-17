@@ -27,8 +27,7 @@ from app.interaction_flow import (
 )
 
 from app.config import (
-    FONT, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE,
-    FONT_THICKNESS, FONT_THICKNESS_GESTURE,
+    FONT, FONT_SIZE_MEDIUM, FONT_SIZE_LARGE, FONT_THICKNESS,
     COLOR_PINK, COLOR_YELLOW,
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME,
     IDLE_ANIMATION_NAME,
@@ -37,11 +36,9 @@ from app.config import (
     RAW_BACKGROUND
 )
 
-
 def speak_in_background(message: str):
     thread = threading.Thread(target=speak_text, args=(message,))
     thread.start()
-
 
 class AppState:
     def __init__(self):
@@ -50,7 +47,6 @@ class AppState:
         self.awaiting_wave = False
         self.request_restart = False
         self.idle_start_time = time.time()
-
 
 def main():
     while True:
@@ -80,6 +76,11 @@ def main():
 
         wave_start_time = None
         REQUIRED_WAVE_DURATION = 1.8
+
+        stable_gesture_buffer = []
+        STABLE_GESTURE_FRAMES = 3
+        MIN_TIME_BETWEEN_GESTURES = 2
+        gesture_cooldown_until = 0
 
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -117,7 +118,6 @@ def main():
                     frame, faces, interaction_started, current_time
                 )
 
-            # 🏡 Always use the same background image
             background_image = cv2.resize(RAW_BACKGROUND, (int(frame.shape[1] * 0.8), frame.shape[0]))
             black_frame = background_image.copy()
 
@@ -133,12 +133,21 @@ def main():
             if interaction_started and current_time - interaction_start_time >= GESTURE_START_DELAY:
                 gesture = detect_custom_gesture(frame)
 
-                if gesture and (gesture != last_gesture or current_time - gesture_last_time > GESTURE_DISPLAY_DURATION):
-                    print(f"🖐️ Detected gesture: {gesture}")
-                    last_gesture = gesture
-                    gesture_last_time = current_time
+                if gesture:
+                    if current_time >= gesture_cooldown_until:
+                        stable_gesture_buffer.append(gesture)
+                        if len(stable_gesture_buffer) > STABLE_GESTURE_FRAMES:
+                            stable_gesture_buffer.pop(0)
 
-                elif not gesture:
+                        if len(stable_gesture_buffer) == STABLE_GESTURE_FRAMES and all(g == gesture for g in stable_gesture_buffer):
+                            print(f"🖐️ Detected stable gesture: {gesture}")
+                            last_gesture = gesture
+                            gesture_last_time = current_time
+                            gesture_cooldown_until = current_time + MIN_TIME_BETWEEN_GESTURES
+                    else:
+                        stable_gesture_buffer.clear()
+                else:
+                    stable_gesture_buffer.clear()
                     if detect_wave(frame):
                         if wave_start_time is None:
                             wave_start_time = current_time
@@ -148,7 +157,6 @@ def main():
                         wave_start_time = None
 
                 if last_gesture and current_time - gesture_last_time < GESTURE_DISPLAY_DURATION:
-                    # 🎞️ Show gesture animation
                     black_frame = overlay_centered_animation(
                         black_frame,
                         last_gesture,
@@ -156,7 +164,6 @@ def main():
                         duration=GESTURE_DISPLAY_DURATION
                     )
 
-                    # ✨ Show gesture name as text (top left)
                     cv2.putText(
                         black_frame,
                         f"{last_gesture.replace('_', ' ')} detected!",
@@ -164,10 +171,9 @@ def main():
                         FONT,
                         FONT_SIZE_LARGE,
                         COLOR_YELLOW,
-                        FONT_THICKNESS_GESTURE  # 👈 Thicker for gesture label
+                        FONT_THICKNESS
                     )
 
-            # Final UI steps: add camera preview + subtitles
             final_display = add_user_preview(black_frame.copy(), full_frame)
             subtitle_text = get_current_subtitle()
             final_display = add_subtitles(final_display, subtitle_text)
@@ -182,7 +188,6 @@ def main():
 
         if user_requested_exit:
             break
-
 
 if __name__ == "__main__":
     main()
