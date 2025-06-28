@@ -26,7 +26,7 @@ def main():
     prev_frame = cv2.flip(prev_frame, 1)
 
     last_trigger_time = 0
-    cooldown = 10  # seconds to wait before reacting again
+    cooldown = 5  # seconds to wait before reacting again
     last_known_user = None
     idle_start_time = time.time()  # ✅ Keep this persistent for looping animation
 
