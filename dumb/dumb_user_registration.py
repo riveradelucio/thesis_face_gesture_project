@@ -2,6 +2,7 @@
 
 import time
 import threading
+import random
 from datetime import datetime
 import cv2
 from app.text_to_speech import speak_text
@@ -9,6 +10,7 @@ from app.subtitle_manager import update_subtitle
 from app.gesture_responder import overlay_centered_animation
 from app.config import RAW_BACKGROUND
 from app.screen_camera_and_subtitles import add_subtitles
+
 
 def play_animation_during_speech(messages, cap, window_name, window_width, window_height):
     for msg in messages:
@@ -39,7 +41,7 @@ def handle_dumb_user_registration(cap, window_name, window_width, window_height,
     The name and time are not stored permanently.
     """
     if last_known_user is None:
-        intro1 = "Hi there! I am Luis. I do not know you yet. Your are to new user to me."
+        intro1 = "Hi there! I am Luis. I do not know you yet. Your are a new user to me."
         intro2 = "Could you please type your name on the keyboard so we can get to know each other?"
 
         play_animation_during_speech([intro1, intro2], cap, window_name, window_width, window_height)
@@ -58,7 +60,16 @@ def handle_dumb_user_registration(cap, window_name, window_width, window_height,
         greeting = f"Welcome back {name}, it's good to see you again."
 
     time_info = time.strftime("The time is %I:%M %p").lstrip("0").lower()
-    reminder = f"This is your daily reminder to take your medication at {reminder_time}."
+
+    # 🧠 5 natural variations using the user's reminder time
+    reminder_phrases = [
+        f"This is your daily reminder to take your medication at {reminder_time}.",
+        f"Don't forget to take your meds at {reminder_time}.",
+        f"It's important to take your medication on time. Please remember: {reminder_time}.",
+        f"Gentle reminder: your medication is scheduled for {reminder_time}.",
+        f"Just a friendly heads-up! Medication time is at {reminder_time}."
+    ]
+    reminder = random.choice(reminder_phrases)
 
     play_animation_during_speech([greeting, time_info, reminder], cap, window_name, window_width, window_height)
 
