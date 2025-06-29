@@ -7,6 +7,11 @@ import numpy as np
 import os
 import sys
 import subprocess
+import random
+
+# 🔒 Global lock to avoid double-speech
+tts_lock = threading.Lock()
+
 
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.gesture_recognition import detect_custom_gesture
@@ -37,8 +42,15 @@ from app.config import (
 )
 
 def speak_in_background(message: str):
-    thread = threading.Thread(target=speak_text, args=(message,))
+    def speak_safe():
+        if tts_lock.locked():
+            #print("🔇 Skipping speech: TTS engine is already speaking.")
+            return
+        with tts_lock:
+            speak_text(message)
+    thread = threading.Thread(target=speak_safe)
     thread.start()
+
 
 class AppState:
     def __init__(self):
@@ -164,15 +176,31 @@ def main():
                         duration=GESTURE_DISPLAY_DURATION
                     )
 
-                    cv2.putText(
-                        black_frame,
-                        f"{last_gesture.replace('_', ' ')} detected!",
-                        (20, 50),
-                        FONT,
-                        FONT_SIZE_LARGE,
-                        COLOR_YELLOW,
-                        FONT_THICKNESS
-                    )
+                    #cv2.putText(
+                    #    black_frame,
+                    #    f"{last_gesture.replace('_', ' ')} detected!",
+                    #    (20, 50),
+                    #    FONT,
+                    #    FONT_SIZE_LARGE,
+                    #    COLOR_YELLOW,
+                    #    FONT_THICKNESS
+                    #)
+
+                    # ✨ List of different ways to say the gesture
+                    gesture_templates = [
+                        "You are showing the {} gesture.",
+                        "Looks like you're doing the {} gesture!",
+                        "I see a {} gesture there.",
+                        "Nice! That's a {} gesture."
+                    ]
+
+                    # 🎲 Randomly pick one template
+                    chosen_template = random.choice(gesture_templates)
+
+                    # 🧠 Format with the gesture name (e.g., 'heart')
+                    gesture_text = chosen_template.format(last_gesture.replace('_', ' '))
+
+                    speak_in_background(gesture_text)
 
             final_display = add_user_preview(black_frame.copy(), full_frame)
             subtitle_text = get_current_subtitle()
