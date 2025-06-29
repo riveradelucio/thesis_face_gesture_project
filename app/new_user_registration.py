@@ -83,6 +83,9 @@ def handle_new_user_registration(frame):
     register_known_faces("known_faces")
     print(f"Stage 5: {name} registered as {role}. System updated.")
 
-    # ✅ Say goodbye with reminder
-    reminder_message = f"Thank you {name.capitalize()}. I will remind you to take your medication at {reminder_time}."
+    # ✅ Say goodbye with friendly reminder
+    reminder_message = (
+        f"Thank you, {name.capitalize()}. I'll remind you to take your medication at {reminder_time}. "
+        "When you're ready to interact, just give me a wave!"
+    )
     speak_in_background(reminder_message)
