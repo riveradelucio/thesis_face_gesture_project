@@ -16,6 +16,7 @@ def detect_motion(frame, prev_frame, threshold=15):
     gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
     return np.mean(gray) > threshold
 
+
 def main():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -28,6 +29,7 @@ def main():
     last_trigger_time = 0
     cooldown = 2  # seconds to wait before reacting again
     last_known_user = None
+    last_reminder_time = None
     idle_start_time = time.time()  # ✅ Keep this persistent for looping animation
 
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
@@ -43,9 +45,12 @@ def main():
 
         time_since_last_trigger = time.time() - last_trigger_time
         motion_detected = detect_motion(frame, prev_frame)
+
         if motion_detected and time_since_last_trigger > cooldown:
             print("👀 Motion detected")
-            last_known_user = handle_dumb_user_registration(cap, WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT, last_known_user)
+            last_known_user, last_reminder_time = handle_dumb_user_registration(
+                cap, WINDOW_NAME, WINDOW_WIDTH, WINDOW_HEIGHT, last_known_user, last_reminder_time
+            )
             last_trigger_time = time.time()
             idle_start_time = time.time()  # reset animation cycle after interaction
 
@@ -66,6 +71,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()

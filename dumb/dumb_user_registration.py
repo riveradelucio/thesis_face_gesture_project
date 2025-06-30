@@ -35,13 +35,14 @@ def play_animation_during_speech(messages, cap, window_name, window_width, windo
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-def handle_dumb_user_registration(cap, window_name, window_width, window_height, last_known_user=None):
+
+def handle_dumb_user_registration(cap, window_name, window_width, window_height, last_known_user=None, last_reminder_time=None):
     """
     Dumb version of user registration. Asks for name and reminder time.
     The name and time are not stored permanently.
     """
     if last_known_user is None:
-        intro1 = "Hi there! I am Luis. I do not know you yet. Your are a new user to me."
+        intro1 = "Hi there! I am Luis. I do not know you yet. You are a new user to me."
         intro2 = "Could you please type your name on the keyboard so we can get to know each other?"
 
         play_animation_during_speech([intro1, intro2], cap, window_name, window_width, window_height)
@@ -56,7 +57,7 @@ def handle_dumb_user_registration(cap, window_name, window_width, window_height,
         greeting = f"Hello {name}, it's nice to meet you."
     else:
         name = last_known_user
-        reminder_time = "3 PM"  # fallback if not passed
+        reminder_time = last_reminder_time or "3 PM"  # fallback only if not stored
 
         # 🧠 Variations for welcome-back messages
         greeting_variations = [
@@ -70,7 +71,7 @@ def handle_dumb_user_registration(cap, window_name, window_width, window_height,
 
     time_info = time.strftime("The time is %I:%M %p").lstrip("0").lower()
 
-    # 🧠 Reminder phrases with the selected reminder_time
+    # 🧠 Reminder phrases using the selected reminder_time
     reminder_phrases = [
         f"This is your daily reminder to take your medication at {reminder_time}.",
         f"Don't forget to take your meds at {reminder_time}.",
@@ -82,4 +83,4 @@ def handle_dumb_user_registration(cap, window_name, window_width, window_height,
 
     play_animation_during_speech([greeting, time_info, reminder], cap, window_name, window_width, window_height)
 
-    return name
+    return name, reminder_time
