@@ -57,11 +57,20 @@ def handle_dumb_user_registration(cap, window_name, window_width, window_height,
     else:
         name = last_known_user
         reminder_time = "3 PM"  # fallback if not passed
-        greeting = f"Welcome back {name}, it's good to see you again."
+
+        # 🧠 Variations for welcome-back messages
+        greeting_variations = [
+            f"Welcome back {name}, it's good to see you again.",
+            f"Hi {name}, you're back! Glad to have you.",
+            f"Hello again {name}, I’m happy to see you.",
+            f"{name}, welcome back! You look great today.",
+            f"Hey {name}, it's always nice when you stop by."
+        ]
+        greeting = random.choice(greeting_variations)
 
     time_info = time.strftime("The time is %I:%M %p").lstrip("0").lower()
 
-    # 🧠 5 natural variations using the user's reminder time
+    # 🧠 Reminder phrases with the selected reminder_time
     reminder_phrases = [
         f"This is your daily reminder to take your medication at {reminder_time}.",
         f"Don't forget to take your meds at {reminder_time}.",
