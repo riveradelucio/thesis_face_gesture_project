@@ -73,11 +73,11 @@ def handle_dumb_user_registration(cap, window_name, window_width, window_height,
 
     # 🧠 Reminder phrases using the selected reminder_time
     reminder_phrases = [
-        f"This is your daily reminder to take your medication at {reminder_time}.",
-        f"Don't forget to take your meds at {reminder_time}.",
-        f"It's important to take your medication on time. Please remember: {reminder_time}.",
-        f"Gentle reminder: your medication is scheduled for {reminder_time}.",
-        f"Just a friendly heads-up! Medication time is at {reminder_time}."
+        f"This is your daily reminder to take your medication at {reminder_time}. Please wave or move again if you need anything else.",
+        f"Don't forget to take your meds at {reminder_time}. Feel free to make another movement to get your reminder again.",
+        f"It's important to take your medication on time. Please remember: {reminder_time}. If you want your reminder again, just do another movement. ",
+        f"Gentle reminder: your medication is scheduled for {reminder_time}. Please wave or move again if you need anything else.",
+        f"Just a friendly heads-up! Medication time is at {reminder_time}. Feel free to wave again if you need the meds time information."
     ]
     reminder = random.choice(reminder_phrases)
 

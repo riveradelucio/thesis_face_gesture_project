@@ -188,10 +188,10 @@ def main():
 
                     # ✨ List of different ways to say the gesture
                     gesture_templates = [
-                        "You are showing the {} gesture.",
-                        "Looks like you're doing the {} gesture!",
-                        "I see a {} gesture there.",
-                        "Nice! That's a {} gesture."
+                        "You are showing the {} gesture. Pleasy try another gesture.",
+                        "Looks like you're doing the {} gesture! Pleasy try another one",
+                        "I see a {} gesture there. Pleasy try another gesture.",
+                        "Nice! That's a {} gesture. Could you try another gesture?"
                     ]
 
                     # 🎲 Randomly pick one template
