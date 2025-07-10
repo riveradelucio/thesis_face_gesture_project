@@ -12,17 +12,20 @@ df = df.drop(columns=["Participant Number"])
 system_a = df[[col for col in df.columns if col.endswith('_A')]]
 system_b = df[[col for col in df.columns if col.endswith('_B')]]
 
-# ✅ Step 4: Print mean scores per question
+# ✅ Step 4: Clean mean scores into aligned rows
 mean_scores = pd.DataFrame({
-    'System A Mean': system_a.mean(),
-    'System B Mean': system_b.mean()
+    'Question': [col.replace('_A', '') for col in system_a.columns],
+    'System A Mean': system_a.mean().values,
+    'System B Mean': system_b.mean().values
 })
-print("Mean scores per question:\n")
-print(mean_scores)
+
+print("✅ Mean scores per question:\n")
+print(mean_scores.to_string(index=False))
 
 # ✅ Step 5: Run paired t-test for each question
-print("\nPaired t-test results per question:")
+print("\n✅ Paired t-test results per question:")
 for col_a in system_a.columns:
     col_b = col_a.replace('_A', '_B')
     t_stat, p_val = ttest_rel(df[col_a], df[col_b])
-    print(f"{col_a.replace('_A', '')}: t = {t_stat:.2f}, p = {p_val:.4f}")
+    question = col_a.replace('_A', '')
+    print(f"{question}: t = {t_stat:.2f}, p = {p_val:.4f}")
