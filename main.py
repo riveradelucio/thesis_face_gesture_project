@@ -90,8 +90,10 @@ def main():
         REQUIRED_WAVE_DURATION = 1.8
 
         stable_gesture_buffer = []
-        STABLE_GESTURE_FRAMES = 3
-        MIN_TIME_BETWEEN_GESTURES = 2
+        STABLE_GESTURE_FRAMES = 5
+        # STABLE_GESTURE_FRAMES = 3
+        MIN_TIME_BETWEEN_GESTURES = 3
+        #MIN_TIME_BETWEEN_GESTURES = 4
         gesture_cooldown_until = 0
 
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
@@ -188,10 +190,17 @@ def main():
 
                     # ✨ List of different ways to say the gesture
                     gesture_templates = [
-                        "You are showing the {} gesture. Pleasy try another gesture.",
-                        "Looks like you're doing the {} gesture! Pleasy try another one",
-                        "I see a {} gesture there. Pleasy try another gesture.",
-                        "Nice! That's a {} gesture. Could you try another gesture?"
+                        "Hey, that's the {} gesture – well done! Want to show me another?",
+                        "Cool, I caught the {} gesture. What else can you do?",
+                        "That's definitely a {} gesture. Got another one for me?",
+                        "Great job with the {} gesture! Let's see another one.",
+                        "Yup, that's the {} gesture! Feel like trying a different one?",
+                        "You just did a {} gesture – I’m ready for the next one!",
+                        "Awesome, {} gesture detected. Any other gestures you'd like to show?",
+                        "The {} gesture, nice choice! How about another one?",
+                        "Sweet, that was a {} gesture. Wanna go again?",
+                        "You nailed the {} gesture! Show me something new.",
+                        "Perfect! That’s a {} gesture. Let’s keep going – try another one!"
                     ]
 
                     # 🎲 Randomly pick one template

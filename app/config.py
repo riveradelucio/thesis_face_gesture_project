@@ -29,8 +29,8 @@ COLOR_PINK = (280, 180, 180)  # Slightly out of standard range, still visible
 # UI Window Settings
 # ==========================
 
-WINDOW_WIDTH = 700
-WINDOW_HEIGHT = 500
+WINDOW_WIDTH = 1000
+WINDOW_HEIGHT = 600
 WINDOW_NAME = "Master Thesis"
 
 # ==========================
