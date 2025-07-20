@@ -1,14 +1,30 @@
-from pydub import AudioSegment
+import subprocess
 import os
 
-# Full path to your .ogg file
-input_path = r"C:\Users\river\OneDrive - Radboud Universiteit\Bureaublad\Desktop\Master\Thesis\Evaluation\Participants\Responses\ID_003\System A\ID_003_Interview.ogg"
+# === USER INPUT HERE ===
+participant_id = "ID_016"  # e.g. ID_003
+system = "B"               # "A" or "B"
 
-# Output file path — will save as .wav in the same folder
-output_path = os.path.splitext(input_path)[0] + ".wav"
+# === AUTO-GENERATED PATH AND FILENAMES ===
+base_dir = fr"C:\Users\river\OneDrive - Radboud Universiteit\Bureaublad\Desktop\Master\Thesis\Evaluation\Participants\Responses"
+input_filename = f"{participant_id}_{system}_Interview.ogg"
+output_filename = f"{participant_id}_{system}_Interview_word_ready.wav"
+folder_path = os.path.join(base_dir, participant_id, f"System_{system}")
 
-# Load and convert
-audio = AudioSegment.from_ogg(input_path)
-audio.export(output_path, format="wav")
+# Full paths
+input_path = os.path.join(folder_path, input_filename)
+output_path = os.path.join(folder_path, output_filename)
 
-print(f"✅ Done! Converted file saved at:\n{output_path}")
+# === FFMPEG CONVERSION ===
+command = [
+    "ffmpeg",
+    "-i", input_path,
+    "-acodec", "pcm_s16le",  # WAV PCM 16-bit
+    "-ac", "1",              # Mono
+    "-ar", "16000",          # 16 kHz sample rate
+    output_path
+]
+
+print(f"🔄 Converting:\nFrom: {input_path}\nTo:   {output_path}")
+subprocess.run(command)
+print("✅ Done! Word-compatible file created.")
