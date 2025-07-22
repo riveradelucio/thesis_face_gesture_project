@@ -7,6 +7,11 @@ import numpy as np
 import os
 import sys
 import subprocess
+import random
+
+# 🔒 Global lock to avoid double-speech
+tts_lock = threading.Lock()
+
 
 from app.face_recognition import detect_and_recognize, register_known_faces
 from app.gesture_recognition import detect_custom_gesture
@@ -37,8 +42,15 @@ from app.config import (
 )
 
 def speak_in_background(message: str):
-    thread = threading.Thread(target=speak_text, args=(message,))
+    def speak_safe():
+        if tts_lock.locked():
+            #print("🔇 Skipping speech: TTS engine is already speaking.")
+            return
+        with tts_lock:
+            speak_text(message)
+    thread = threading.Thread(target=speak_safe)
     thread.start()
+
 
 class AppState:
     def __init__(self):
@@ -78,8 +90,10 @@ def main():
         REQUIRED_WAVE_DURATION = 1.8
 
         stable_gesture_buffer = []
-        STABLE_GESTURE_FRAMES = 3
-        MIN_TIME_BETWEEN_GESTURES = 2
+        STABLE_GESTURE_FRAMES = 5
+        # STABLE_GESTURE_FRAMES = 3
+        MIN_TIME_BETWEEN_GESTURES = 3
+        #MIN_TIME_BETWEEN_GESTURES = 4
         gesture_cooldown_until = 0
 
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
@@ -164,15 +178,38 @@ def main():
                         duration=GESTURE_DISPLAY_DURATION
                     )
 
-                    cv2.putText(
-                        black_frame,
-                        f"{last_gesture.replace('_', ' ')} detected!",
-                        (20, 50),
-                        FONT,
-                        FONT_SIZE_LARGE,
-                        COLOR_YELLOW,
-                        FONT_THICKNESS
-                    )
+                    #cv2.putText(
+                    #    black_frame,
+                    #    f"{last_gesture.replace('_', ' ')} detected!",
+                    #    (20, 50),
+                    #    FONT,
+                    #    FONT_SIZE_LARGE,
+                    #    COLOR_YELLOW,
+                    #    FONT_THICKNESS
+                    #)
+
+                    # ✨ List of different ways to say the gesture
+                    gesture_templates = [
+                        "Hey, that's the {} gesture – well done! Want to show me another?",
+                        "Cool, I caught the {} gesture. What else can you do?",
+                        "That's definitely a {} gesture. Got another one for me?",
+                        "Great job with the {} gesture! Let's see another one.",
+                        "Yup, that's the {} gesture! Feel like trying a different one?",
+                        "You just did a {} gesture – I’m ready for the next one!",
+                        "Awesome, {} gesture detected. Any other gestures you'd like to show?",
+                        "The {} gesture, nice choice! How about another one?",
+                        "Sweet, that was a {} gesture. Wanna go again?",
+                        "You nailed the {} gesture! Show me something new.",
+                        "Perfect! That’s a {} gesture. Let’s keep going – try another one!"
+                    ]
+
+                    # 🎲 Randomly pick one template
+                    chosen_template = random.choice(gesture_templates)
+
+                    # 🧠 Format with the gesture name (e.g., 'heart')
+                    gesture_text = chosen_template.format(last_gesture.replace('_', ' '))
+
+                    speak_in_background(gesture_text)
 
             final_display = add_user_preview(black_frame.copy(), full_frame)
             subtitle_text = get_current_subtitle()
