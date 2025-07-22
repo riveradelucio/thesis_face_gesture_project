@@ -3,7 +3,7 @@ import os
 
 # === USER INPUT HERE ===
 participant_id = "ID_016"  # e.g. ID_003
-system = "B"               # "A" or "B"
+system = "B"               # "A" or "B" 
 
 # === AUTO-GENERATED PATH AND FILENAMES ===
 base_dir = fr"C:\Users\river\OneDrive - Radboud Universiteit\Bureaublad\Desktop\Master\Thesis\Evaluation\Participants\Responses"
