@@ -2,6 +2,8 @@ from app.role_identifier import get_user_role
 from app.role_database import USER_ROLES
 from app.text_to_speech import speak_text
 from app.visit_logger import log_user_visit, user_visited_today, get_last_visit
+from app.new_user_registration import speak_multiple_lines_in_background
+
 
 import threading
 from datetime import datetime
@@ -35,7 +37,10 @@ def greet_user_by_role(name: str):
                     period = "evening"
 
                 time_str = last_seen_time.strftime("%I:%M %p").lstrip("0")
-                greeting += f" Last time I saw {elderly_name} was in the {period} at {time_str.lower()}."
+                greeting += (
+                    f" Last time I saw {elderly_name} was in the {period} at {time_str.lower()}."
+)
+
 
     # 🧓 Elderly-specific phrasing
     if role == "Elderly user":
@@ -46,6 +51,7 @@ def greet_user_by_role(name: str):
 
     # 🖐️ Add natural transition to gesture mode
     gesture_prompt = "Let me know how I can help, just show me a hand gesture."
-    full_message = f"{greeting} {gesture_prompt}"
+    lines = [greeting, gesture_prompt]
+    speak_multiple_lines_in_background(lines)
+    
 
-    speak_in_background(full_message)

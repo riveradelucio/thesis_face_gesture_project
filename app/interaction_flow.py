@@ -84,8 +84,8 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
     if interaction_start_time:
         time_since_start = current_time - interaction_start_time
         if time_since_start < SHOW_WAVE_MESSAGE_DURATION:
-            cv2.putText(black_frame, "Hi detected!", (20, 50),
-                        FONT, FONT_SIZE_LARGE, COLOR_YELLOW, FONT_THICKNESS_GESTURE)
+            #cv2.putText(black_frame, "Hi detected!", (20, 50),
+            #            FONT, FONT_SIZE_LARGE, COLOR_YELLOW, FONT_THICKNESS_GESTURE)
             black_frame = overlay_centered_animation(
                 black_frame,
                 "Speaking",
@@ -99,8 +99,8 @@ def draw_interaction_status(black_frame, current_time, interaction_start_time, l
                     IDLE_ANIMATION_NAME,
                     state.idle_start_time
                 )
-            cv2.putText(black_frame, "Interaction Running...", (180, 20),
-                        FONT, FONT_SIZE_SMALL, COLOR_GRAY, FONT_THICKNESS)
+            #cv2.putText(black_frame, "Interaction Running...", (180, 20),
+            #            FONT, FONT_SIZE_SMALL, COLOR_GRAY, FONT_THICKNESS)
 
     if state.show_typing_prompt:
         black_frame = overlay_centered_animation(
